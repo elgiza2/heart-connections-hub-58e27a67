@@ -418,6 +418,8 @@ export function translateExactText(text: string, lang?: AuthLang): string {
   if (!normalized) return text;
   const entry = BY_ENGLISH.get(normalized);
   if (entry) return entry[L] || entry.en;
-  return text;
+  // Fall back to the bundled Egyptian dictionaries (same data the DOM pass uses).
+  return EGYPTIAN_EXTRA[normalized] || EGYPTIAN_DICT[normalized] || text;
 }
+
 
