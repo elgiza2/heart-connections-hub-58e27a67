@@ -525,4 +525,6 @@ export const EGYPTIAN_EXTRA: Record<string, string> = {
   "Choose your": "اختار",
   "Creative edge": "ميزتك الإبداعية",
   "Choose your creative edge": "اختار ميزتك الإبداعية",
+  "CHOOSE YOUR": "اختار",
+  "CREATIVE EDGE": "ميزتك الإبداعية",
 };
