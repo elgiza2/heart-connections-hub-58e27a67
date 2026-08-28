@@ -462,7 +462,7 @@ const MobileChatLanding = ({
 }: Props) => {
   const taRef = useRef<HTMLTextAreaElement>(null);
   const lang = useUserLang();
-  const isRtl = lang === "ar" || lang === "ar-eg" || lang === "fa" || lang === "he";
+  const isRtl = lang === "ar-eg";
   void models;
   void selectedModelId;
   void onModelSelect;

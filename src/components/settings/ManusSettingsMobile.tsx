@@ -55,7 +55,7 @@ const ManusSettingsMobile = () => {
   const navigate = useNavigate();
   const account = useActiveAccount();
   const lang = useUserLang();
-  const isAr = lang === "ar" || lang === "ar-eg" || lang === "he" || lang === "fa";
+  const isAr = lang === "ar-eg";
   const { plan, credits } = useCredits();
   const [userEmail, setUserEmail] = useState("");
   const [logoutOpen, setLogoutOpen] = useState(false);

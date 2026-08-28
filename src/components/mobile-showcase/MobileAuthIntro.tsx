@@ -49,7 +49,7 @@ export default function MobileAuthIntro({
   error,
 }: Props) {
   const lang = useUserLang();
-  const isAr = lang === "ar";
+  const isAr = lang === "ar-eg";
   const logo = useBrandLogo();
   const t = isAr
     ? {

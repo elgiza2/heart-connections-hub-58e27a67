@@ -90,7 +90,7 @@ const ThinkingLoader = ({ searchStatus }: ThinkingLoaderProps) => {
   const starClass = "text-[var(--megsy-blue)]";
   const thinkingLabel = uiT("thinking", lang);
   const deepLabel = uiT("thinkingDeep", lang);
-  const rtl = lang === "ar" || lang === "ar-eg" || lang === "fa" || lang === "he";
+  const rtl = lang === "ar-eg";
 
   if (searchStatus?.trim()) {
     return (

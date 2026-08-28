@@ -1007,7 +1007,7 @@ export default function FeatureShowcase({ onFinish }: { onFinish?: () => void })
   const pickRegion = (r: PayRegion) => {
     setRegion(r);
     setPayRegion(r);
-    void setUserLang(r === "arab" ? "ar" : "en", { syncRemote: false });
+    void setUserLang(r === "arab" ? "ar-eg" : "en", { syncRemote: false });
   };
   const pages = [
     <Page key="region">
