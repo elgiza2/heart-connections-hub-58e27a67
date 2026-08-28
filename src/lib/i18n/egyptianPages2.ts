@@ -491,4 +491,5 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "From Megsy": "من Megsy",
   "Search email": "دوّر في البريد",
   "Clear": "مسح",
+  "Compose": "اكتب رسالة",
 };
