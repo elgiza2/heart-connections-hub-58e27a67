@@ -1,15 +1,19 @@
-/** @doc Megsy Mail — full mailbox page: inbox, spam, sent, trash + compose. */
+/** @doc Megsy Mail — clean mailbox: inbox, sent, spam, trash, full reader, compose, reply & AI explain. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Bot,
   Copy,
+  CornerUpLeft,
+  Forward,
   Inbox,
   Loader2,
   Mail,
+  RefreshCw,
   Send,
   ShieldAlert,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -21,12 +25,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { translateExactText, useUserLang } from "@/lib/authI18n";
+import { explainMail } from "@/lib/mail/explainMail";
 import {
   deleteForever,
   ensureMailbox,
   listMail,
   pollInbox,
-
   markRead,
   moveTo,
   sendMail,
@@ -42,6 +46,26 @@ const FOLDERS: { key: MailFolder; label: string; icon: typeof Inbox }[] = [
   { key: "trash", label: "Trash", icon: Trash2 },
 ];
 
+interface Draft {
+  to: string;
+  subject: string;
+  text: string;
+}
+
+function initials(addr: string) {
+  const name = (addr || "?").replace(/[<>]/g, "").split("@")[0];
+  return (name.trim()[0] || "?").toUpperCase();
+}
+
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  return sameDay
+    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString([], { day: "2-digit", month: "short" });
+}
+
 export default function MailPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -53,7 +77,7 @@ export default function MailPage() {
   const [items, setItems] = useState<MailMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<MailMessage | null>(null);
-  const [composing, setComposing] = useState(false);
+  const [draft, setDraft] = useState<Draft | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -65,30 +89,23 @@ export default function MailPage() {
     };
   }, []);
 
-  const refresh = useCallback(
-    async (f: MailFolder) => {
-      setLoading(true);
-      try {
-        if (f === "inbox" || f === "spam") await pollInbox();
-        setItems(await listMail(f));
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : String(e));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
+  const refresh = useCallback(async (f: MailFolder) => {
+    setLoading(true);
+    try {
+      if (f === "inbox" || f === "spam") await pollInbox();
+      setItems(await listMail(f));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (box) void refresh(folder);
   }, [box, folder, refresh]);
 
-  const unread = useMemo(
-    () => items.filter((m) => !m.is_read && folder === "inbox").length,
-    [items, folder],
-  );
+  const unread = useMemo(() => items.filter((m) => !m.is_read).length, [items]);
 
   const openMessage = async (m: MailMessage) => {
     setOpen(m);
@@ -106,15 +123,35 @@ export default function MailPage() {
     toast.success(tx(target === "delete" ? "Deleted" : "Moved"));
   };
 
+  const reply = (m: MailMessage) => {
+    setOpen(null);
+    setDraft({
+      to: m.from_address,
+      subject: m.subject.toLowerCase().startsWith("re:") ? m.subject : `Re: ${m.subject}`,
+      text: `\n\n---\n${m.from_address}:\n${m.body_text}`,
+    });
+  };
+
+  const forward = (m: MailMessage) => {
+    setOpen(null);
+    setDraft({
+      to: "",
+      subject: m.subject.toLowerCase().startsWith("fwd:") ? m.subject : `Fwd: ${m.subject}`,
+      text: `\n\n--- ${tx("Forwarded message")} ---\n${tx("From")}: ${m.from_address}\n\n${m.body_text}`,
+    });
+  };
+
   const Header = (
-    <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
+    <div className="rounded-3xl border border-foreground/10 bg-foreground/[0.03] p-4">
       <div className="flex items-center gap-3">
-        <div className="grid place-items-center w-10 h-10 rounded-xl bg-foreground/[0.06]">
+        <div className="grid place-items-center w-10 h-10 rounded-2xl bg-foreground/[0.06]">
           <Mail className="w-5 h-5" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[12px] text-foreground/50">{tx("Your Megsy address")}</p>
-          <p className="text-[15px] font-medium truncate">{box?.address ?? "…"}</p>
+          <p className="text-[15px] font-medium truncate" dir="ltr">
+            {box?.address ?? "…"}
+          </p>
         </div>
         <Button
           variant="ghost"
@@ -134,10 +171,15 @@ export default function MailPage() {
           "This inbox belongs to you and to Megsy. The assistant can send mail and read replies here when you ask it to sign up for a service or follow up on something.",
         )}
       </p>
-      <Button className="mt-3 w-full" onClick={() => setComposing(true)}>
-        <Send className="w-4 h-4" />
-        <span>{tx("New message")}</span>
-      </Button>
+      <div className="mt-3 flex gap-2">
+        <Button className="flex-1" onClick={() => setDraft({ to: "", subject: "", text: "" })}>
+          <Send className="w-4 h-4" />
+          <span>{tx("New message")}</span>
+        </Button>
+        <Button variant="outline" size="icon" aria-label={tx("Refresh")} onClick={() => void refresh(folder)}>
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
     </div>
   );
 
@@ -158,7 +200,7 @@ export default function MailPage() {
           >
             <Icon className="w-3.5 h-3.5" />
             <span>{tx(f.label)}</span>
-            {f.key === "inbox" && unread > 0 && (
+            {f.key === "inbox" && folder === "inbox" && unread > 0 && (
               <span className="rounded-full bg-primary/20 px-1.5 text-[11px]">{unread}</span>
             )}
           </button>
@@ -168,39 +210,47 @@ export default function MailPage() {
   );
 
   const List = (
-    <div className="mt-4 rounded-2xl border border-foreground/10 overflow-hidden divide-y divide-foreground/[0.06]">
+    <div className="mt-4 rounded-3xl border border-foreground/10 overflow-hidden divide-y divide-foreground/[0.06]">
       {loading && (
-        <div className="p-8 grid place-items-center text-foreground/50">
+        <div className="p-10 grid place-items-center text-foreground/50">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
       )}
       {!loading && items.length === 0 && (
-        <p className="p-8 text-center text-[13px] text-foreground/50">{tx("No messages here")}</p>
+        <p className="p-10 text-center text-[13px] text-foreground/50">{tx("No messages here")}</p>
       )}
       {!loading &&
-        items.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => void openMessage(m)}
-            className="w-full text-start px-4 py-3 hover:bg-foreground/[0.03] transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {m.origin === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
-              <p
-                className={`min-w-0 flex-1 truncate text-[13px] ${
-                  m.is_read ? "text-foreground/70" : "font-semibold"
-                }`}
-              >
-                {folder === "sent" ? m.to_address : m.from_address}
-              </p>
-              <span className="text-[11px] text-foreground/40 shrink-0">
-                {new Date(m.created_at).toLocaleDateString()}
+        items.map((m) => {
+          const who = folder === "sent" ? m.to_address : m.from_name || m.from_address;
+          return (
+            <button
+              key={m.id}
+              onClick={() => void openMessage(m)}
+              className="w-full text-start px-4 py-3 hover:bg-foreground/[0.03] transition-colors flex gap-3"
+            >
+              <span className="mt-0.5 grid place-items-center w-9 h-9 shrink-0 rounded-full bg-foreground/[0.07] text-[13px] font-semibold">
+                {initials(folder === "sent" ? m.to_address : m.from_address)}
               </span>
-            </div>
-            <p className="mt-0.5 truncate text-[13.5px]">{m.subject || tx("(no subject)")}</p>
-            <p className="truncate text-[12px] text-foreground/50">{m.snippet}</p>
-          </button>
-        ))}
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  {m.origin === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
+                  <span
+                    className={`min-w-0 flex-1 truncate text-[13px] ${
+                      m.is_read ? "text-foreground/70" : "font-semibold"
+                    }`}
+                  >
+                    {who}
+                  </span>
+                  <span className="text-[11px] text-foreground/40 shrink-0">{fmtDate(m.created_at)}</span>
+                </span>
+                <span className={`mt-0.5 block truncate text-[13.5px] ${m.is_read ? "" : "font-semibold"}`}>
+                  {m.subject || tx("(no subject)")}
+                </span>
+                <span className="block truncate text-[12px] text-foreground/50">{m.snippet}</span>
+              </span>
+            </button>
+          );
+        })}
     </div>
   );
 
@@ -210,15 +260,24 @@ export default function MailPage() {
       {Tabs}
       {List}
       {open && (
-        <MessageView msg={open} tx={tx} onClose={() => setOpen(null)} onAct={act} folder={folder} />
+        <MessageView
+          msg={open}
+          tx={tx}
+          onClose={() => setOpen(null)}
+          onAct={act}
+          onReply={reply}
+          onForward={forward}
+          folder={folder}
+        />
       )}
-      {composing && (
+      {draft && (
         <Composer
           tx={tx}
           from={box?.address ?? ""}
-          onClose={() => setComposing(false)}
+          draft={draft}
+          onClose={() => setDraft(null)}
           onSent={() => {
-            setComposing(false);
+            setDraft(null);
             void refresh(folder);
           }}
         />
@@ -254,9 +313,12 @@ export default function MailPage() {
 
 function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-black/50 p-0 sm:p-6" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-black/50 backdrop-blur-sm p-0 sm:p-6"
+      onClick={onClose}
+    >
       <div
-        className="w-full sm:max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-foreground/10 bg-background p-5"
+        className="w-full sm:max-w-xl max-h-[88vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-foreground/10 bg-background p-5"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
@@ -265,46 +327,136 @@ function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () =
   );
 }
 
+/** HTML bodies render inside a sandboxed iframe so remote markup can never touch the app. */
+function HtmlBody({ html }: { html: string }) {
+  const [height, setHeight] = useState(240);
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>
+    body{margin:0;padding:0;font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:#111;background:#fff;word-break:break-word}
+    img{max-width:100%;height:auto}table{max-width:100%}
+  </style></head><body>${html}</body></html>`;
+  return (
+    <iframe
+      title="message"
+      sandbox="allow-popups allow-popups-to-escape-sandbox"
+      srcDoc={doc}
+      onLoad={(e) => {
+        try {
+          const h = (e.currentTarget as HTMLIFrameElement).contentDocument?.body?.scrollHeight;
+          if (h) setHeight(Math.min(h + 24, 2400));
+        } catch {
+          /* cross-origin */
+        }
+      }}
+      style={{ height }}
+      className="mt-4 w-full rounded-2xl border border-foreground/10 bg-white"
+    />
+  );
+}
+
 function MessageView({
   msg,
   tx,
   onClose,
   onAct,
+  onReply,
+  onForward,
   folder,
 }: {
   msg: MailMessage;
   tx: (s: string) => string;
   onClose: () => void;
   onAct: (m: MailMessage, target: MailFolder | "delete") => void;
+  onReply: (m: MailMessage) => void;
+  onForward: (m: MailMessage) => void;
   folder: MailFolder;
 }) {
+  const [explaining, setExplaining] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+
+  const explain = async () => {
+    setExplaining(true);
+    try {
+      const out = await explainMail({
+        subject: msg.subject,
+        from: msg.from_address,
+        body: msg.body_text || msg.body_html?.replace(/<[^>]+>/g, " ") || "",
+      });
+      setExplanation(out || tx("No explanation available"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setExplaining(false);
+    }
+  };
+
   return (
     <Sheet onClose={onClose}>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[17px] font-semibold">{msg.subject || tx("(no subject)")}</h2>
-          <p className="mt-1 text-[12px] text-foreground/55 truncate">
-            {msg.from_address} → {msg.to_address}
-          </p>
+          <h2 className="text-[18px] font-semibold leading-snug">{msg.subject || tx("(no subject)")}</h2>
+          <div className="mt-2 flex items-center gap-2.5">
+            <span className="grid place-items-center w-8 h-8 shrink-0 rounded-full bg-foreground/[0.07] text-[12px] font-semibold">
+              {initials(msg.from_address)}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium truncate" dir="ltr">
+                {msg.from_name || msg.from_address}
+              </p>
+              <p className="text-[11.5px] text-foreground/50 truncate" dir="ltr">
+                {tx("To")}: {msg.to_address} · {new Date(msg.created_at).toLocaleString()}
+              </p>
+            </div>
+          </div>
         </div>
         <Button variant="ghost" size="icon" aria-label={tx("Close")} onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-[14px] leading-relaxed">{msg.body_text}</p>
+
+      {msg.body_html ? (
+        <HtmlBody html={msg.body_html} />
+      ) : (
+        <p className="mt-4 whitespace-pre-wrap text-[14px] leading-relaxed">{msg.body_text}</p>
+      )}
+
       <div className="mt-5 flex flex-wrap gap-2">
+        <Button size="sm" onClick={() => onReply(msg)}>
+          <CornerUpLeft className="w-4 h-4 rtl:rotate-180" />
+          {tx("Reply")}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => onForward(msg)}>
+          <Forward className="w-4 h-4 rtl:rotate-180" />
+          {tx("Forward")}
+        </Button>
+        <Button variant="outline" size="sm" disabled={explaining} onClick={() => void explain()}>
+          {explaining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {tx("Explain with AI")}
+        </Button>
+      </div>
+
+      {explanation && (
+        <div className="mt-4 rounded-2xl border border-primary/25 bg-primary/[0.06] p-4">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-primary">
+            <Sparkles className="w-3.5 h-3.5" />
+            {tx("Megsy's summary")}
+          </p>
+          <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap gap-2 border-t border-foreground/10 pt-4">
         {folder !== "spam" && (
-          <Button variant="outline" size="sm" onClick={() => onAct(msg, "spam")}>
+          <Button variant="ghost" size="sm" onClick={() => onAct(msg, "spam")}>
             {tx("Mark as spam")}
           </Button>
         )}
         {folder === "spam" && (
-          <Button variant="outline" size="sm" onClick={() => onAct(msg, "inbox")}>
+          <Button variant="ghost" size="sm" onClick={() => onAct(msg, "inbox")}>
             {tx("Not spam")}
           </Button>
         )}
         {folder !== "trash" ? (
-          <Button variant="outline" size="sm" onClick={() => onAct(msg, "trash")}>
+          <Button variant="ghost" size="sm" onClick={() => onAct(msg, "trash")}>
             {tx("Move to trash")}
           </Button>
         ) : (
@@ -320,17 +472,19 @@ function MessageView({
 function Composer({
   tx,
   from,
+  draft,
   onClose,
   onSent,
 }: {
   tx: (s: string) => string;
   from: string;
+  draft: Draft;
   onClose: () => void;
   onSent: () => void;
 }) {
-  const [to, setTo] = useState("");
-  const [subject, setSubject] = useState("");
-  const [text, setText] = useState("");
+  const [to, setTo] = useState(draft.to);
+  const [subject, setSubject] = useState(draft.subject);
+  const [text, setText] = useState(draft.text);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -359,13 +513,13 @@ function Composer({
         </Button>
       </div>
       <p className="mt-1 text-[12px] text-foreground/55">
-        {tx("From")}: {from}
+        {tx("From")}: <span dir="ltr">{from}</span>
       </p>
       <div className="mt-4 space-y-3">
-        <Input placeholder={tx("To")} value={to} onChange={(e) => setTo(e.target.value)} />
+        <Input dir="ltr" placeholder={tx("To")} value={to} onChange={(e) => setTo(e.target.value)} />
         <Input placeholder={tx("Subject")} value={subject} onChange={(e) => setSubject(e.target.value)} />
         <Textarea
-          rows={7}
+          rows={9}
           placeholder={tx("Write your message…")}
           value={text}
           onChange={(e) => setText(e.target.value)}
