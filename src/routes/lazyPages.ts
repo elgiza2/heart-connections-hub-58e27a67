@@ -49,6 +49,7 @@ export const ProfileEditPage = lazy(() => import("@/pages/settings/ProfileEditPa
 export const SecuritySettingsPage = lazy(() => import("@/pages/settings/SecuritySettingsPage"));
 export const SecurityPage = lazy(() => import("@/pages/settings/SecurityPage"));
 export const LanguagePage = lazy(() => import("@/pages/settings/LanguagePage"));
+export const MailPage = lazy(() => import("@/pages/settings/MailPage"));
 export const NotificationsPage = lazy(() => import("@/pages/settings/NotificationsPage"));
 export const UsagePage = lazy(() => import("@/pages/usage/UsagePage"));
 export const NotificationsInboxPage = lazy(() => import("@/pages/notifications/NotificationsInboxPage"));
