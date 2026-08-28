@@ -178,7 +178,9 @@ export default function MailPage() {
       aria-label={tx("Copy address")}
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-        <Mail className="h-4 w-4" />
+        <span className="contents">
+          <Mail className="h-4 w-4" />
+        </span>
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[11px] font-medium text-foreground/40">{tx("Your Megsy address")}</span>
@@ -392,7 +394,9 @@ function BackButton({ label, onClick }: { label: string; onClick: () => void }) 
       onClick={onClick}
       className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-foreground/10 bg-foreground/[0.04] text-foreground/70 shadow-sm transition-all hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground active:scale-95"
     >
-      <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+      <span className="contents">
+        <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+      </span>
     </button>
   );
 }
