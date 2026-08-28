@@ -60,7 +60,30 @@ export async function ensureMailbox(): Promise<Mailbox> {
   return res.mailbox;
 }
 
+/** Pull new external mail from the Hostinger catch-all into the inbox. */
+export async function pollInbox(): Promise<{ stored: number; skipped: number } | null> {
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) return null;
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mail-poll`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+      },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as { stored: number; skipped: number };
+  } catch {
+    return null;
+  }
+}
+
 export async function listMail(folder: MailFolder, limit = 100): Promise<MailMessage[]> {
+
   const { data, error } = await supabase
     .from("mail_messages")
     .select("*")

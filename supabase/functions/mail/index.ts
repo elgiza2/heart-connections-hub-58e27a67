@@ -10,6 +10,8 @@
  *                      MAIL_INBOUND_SECRET header.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendSmtp, smtpConfigured } from "../_shared/smtp.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -166,11 +168,41 @@ Deno.serve(async (req) => {
       });
       if (error) return json({ error: error.message }, 500);
       deliveredTo = String(target.address);
+    } else if (smtpConfigured()) {
+      // External delivery through Hostinger SMTP. Some providers refuse a
+      // From that differs from the authenticated mailbox, so fall back to it.
+      try {
+        await sendSmtp({
+          from: String(box.address),
+          fromName: (box.display_name as string | null) ?? null,
+          to,
+          subject,
+          text,
+          html,
+          replyTo: String(box.address),
+        });
+        status = "sent";
+      } catch (_e) {
+        try {
+          await sendSmtp({
+            from: Deno.env.get("SMTP_USER")!,
+            fromName: String(box.address),
+            to,
+            subject,
+            text,
+            html,
+            replyTo: String(box.address),
+          });
+          status = "sent";
+        } catch (e2) {
+          status = "failed";
+          return json({ error: e2 instanceof Error ? e2.message : "smtp failed" }, 502);
+        }
+      }
     } else {
-      // Outbound relay is not wired yet — the message is stored as queued and
-      // will be flushed once an outbound provider is configured.
       status = "queued";
     }
+
 
     const { data: sent, error: sentErr } = await admin
       .from("mail_messages")

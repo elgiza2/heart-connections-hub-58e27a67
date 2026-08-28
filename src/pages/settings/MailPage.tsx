@@ -25,6 +25,8 @@ import {
   deleteForever,
   ensureMailbox,
   listMail,
+  pollInbox,
+
   markRead,
   moveTo,
   sendMail,
@@ -67,6 +69,7 @@ export default function MailPage() {
     async (f: MailFolder) => {
       setLoading(true);
       try {
+        if (f === "inbox" || f === "spam") await pollInbox();
         setItems(await listMail(f));
       } catch (e) {
         toast.error(e instanceof Error ? e.message : String(e));
@@ -76,6 +79,7 @@ export default function MailPage() {
     },
     [],
   );
+
 
   useEffect(() => {
     if (box) void refresh(folder);
