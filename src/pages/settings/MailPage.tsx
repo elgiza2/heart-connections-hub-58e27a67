@@ -344,12 +344,18 @@ function HtmlBody({ html }: { html: string }) {
       sandbox="allow-popups allow-popups-to-escape-sandbox"
       srcDoc={doc}
       onLoad={(e) => {
-        try {
-          const h = (e.currentTarget as HTMLIFrameElement).contentDocument?.body?.scrollHeight;
-          if (h) setHeight(Math.min(h + 24, 2400));
-        } catch {
-          /* cross-origin */
-        }
+        const frame = e.currentTarget as HTMLIFrameElement;
+        const measure = () => {
+          try {
+            const h = frame.contentDocument?.body?.scrollHeight;
+            if (h) setHeight(Math.min(h + 24, 3000));
+          } catch {
+            /* cross-origin */
+          }
+        };
+        measure();
+        // Remote images land after load — re-measure a few times.
+        [150, 600, 1500].forEach((d) => window.setTimeout(measure, d));
       }}
       style={{ height }}
       className="mt-4 w-full rounded-2xl border border-foreground/10 bg-white"
