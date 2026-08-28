@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { LOCALES, type LocaleCode, getLocale } from "@/lib/landing/i18n/locales";
-import { translateExactText, type AuthLang } from "@/lib/authI18n";
+import { translateExactText, getUserLang, type AuthLang } from "@/lib/authI18n";
 
 interface SEOHeadProps {
   title: string;
