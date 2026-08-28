@@ -1,22 +1,20 @@
-/** @doc Megsy Mail — clean mailbox: inbox, sent, spam, trash, full reader, compose, reply & AI explain. */
+/** @doc Megsy Mail — minimal mail client (Superhuman/Apple Mail feel): inbox, sent, spam, trash, reader, compose, AI explain. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Bot,
+  Check,
   Copy,
   CornerUpLeft,
   Forward,
-  Inbox,
   Loader2,
-  Mail,
+  PenLine,
   RefreshCw,
   Search as SearchIcon,
   Send,
-  ShieldAlert,
   Sparkles,
-  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -41,11 +39,11 @@ import {
   type Mailbox,
 } from "@/lib/mail/mailClient";
 
-const FOLDERS: { key: MailFolder; label: string; icon: typeof Inbox }[] = [
-  { key: "inbox", label: "Inbox", icon: Inbox },
-  { key: "sent", label: "Sent", icon: Send },
-  { key: "spam", label: "Spam", icon: ShieldAlert },
-  { key: "trash", label: "Trash", icon: Trash2 },
+const FOLDERS: { key: MailFolder; label: string }[] = [
+  { key: "inbox", label: "Inbox" },
+  { key: "sent", label: "Sent" },
+  { key: "spam", label: "Spam" },
+  { key: "trash", label: "Trash" },
 ];
 
 interface Draft {
@@ -54,34 +52,26 @@ interface Draft {
   text: string;
 }
 
-function initials(addr: string) {
-  const name = (addr || "?").replace(/[<>]/g, "").split("@")[0];
-  return (name.trim()[0] || "?").toUpperCase();
+function displayName(name: string | null | undefined, addr: string) {
+  const n = (name || "").trim();
+  if (n) return n;
+  return (addr || "?").replace(/[<>]/g, "").split("@")[0];
 }
 
-const TONES = [
-  "bg-primary/15 text-primary",
-  "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  "bg-sky-500/15 text-sky-600 dark:text-sky-400",
-  "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  "bg-violet-500/15 text-violet-600 dark:text-violet-400",
-  "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-];
-
-/** Stable per-sender avatar tint so the list reads like a real mail client. */
-function avatarTone(addr: string) {
-  let h = 0;
-  for (const ch of addr || "?") h = (h * 31 + ch.charCodeAt(0)) % 997;
-  return TONES[h % TONES.length];
+function initials(name: string) {
+  const parts = name.trim().split(/[\s._-]+/).filter(Boolean);
+  const a = parts[0]?.[0] ?? "?";
+  const b = parts.length > 1 ? parts[1][0] : "";
+  return (a + b).toUpperCase();
 }
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
-  const today = new Date();
-  const sameDay = d.toDateString() === today.toDateString();
-  return sameDay
-    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : d.toLocaleDateString([], { day: "2-digit", month: "short" });
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString([], sameYear ? { day: "numeric", month: "short" } : { year: "numeric", month: "short" });
 }
 
 export default function MailPage() {
@@ -97,6 +87,7 @@ export default function MailPage() {
   const [open, setOpen] = useState<MailMessage | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [query, setQuery] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -170,120 +161,69 @@ export default function MailPage() {
     );
   }, [items, query]);
 
-  const aiCount = useMemo(() => items.filter((m) => m.origin === "ai").length, [items]);
+  const copyAddress = () => {
+    if (!box) return;
+    void navigator.clipboard.writeText(box.address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
 
-  const Header = (
-    <div className="overflow-hidden rounded-[28px] bg-foreground text-background">
-      <div className="p-5">
-        <div className="flex items-center gap-3">
-          <div className="grid place-items-center w-11 h-11 rounded-full bg-background/15">
-            <span className="contents">
-              <Mail className="w-5 h-5 text-background" />
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold truncate" dir="ltr">
-              {box?.address ?? "…"}
-            </p>
-            <p className="text-[12px] text-background/60">{tx("Your Megsy address")}</p>
-          </div>
-          <button
-            type="button"
-            aria-label={tx("Copy address")}
-            className="grid place-items-center w-9 h-9 rounded-full bg-background/15 hover:bg-background/25 transition-colors"
-            onClick={() => {
-              if (!box) return;
-              void navigator.clipboard.writeText(box.address);
-              toast.success(tx("Copied"));
-            }}
-          >
-            <span className="contents">
-              <Copy className="w-4 h-4 text-background" />
-            </span>
-          </button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {[
-            { n: unread, l: "Unread" },
-            { n: visible.length, l: "Messages" },
-            { n: aiCount, l: "From Megsy" },
-          ].map((s) => (
-            <div key={s.l} className="rounded-2xl bg-background/10 px-3 py-2.5 text-center">
-              <p className="text-[18px] font-semibold leading-none">{s.n}</p>
-              <p className="mt-1 text-[11px] text-background/60">{tx(s.l)}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setDraft({ to: "", subject: "", text: "" })}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-background text-foreground text-[14px] font-semibold h-11 hover:opacity-90 transition-opacity"
-          >
-            <Send className="w-4 h-4" />
-            <span>{tx("New message")}</span>
-          </button>
-          <button
-            type="button"
-            aria-label={tx("Refresh")}
-            onClick={() => void refresh(folder)}
-            className="grid place-items-center w-11 h-11 rounded-full bg-background/15 hover:bg-background/25 transition-colors"
-          >
-            <span className="contents">
-              <RefreshCw className={`w-4 h-4 text-background ${loading ? "animate-spin" : ""}`} />
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
+  /* ── Address bar: one quiet line, no heavy card ── */
+  const AddressBar = (
+    <button
+      type="button"
+      onClick={copyAddress}
+      className="group flex w-full items-center gap-2 text-start"
+      aria-label={tx("Copy address")}
+    >
+      <span className="min-w-0 truncate text-[13px] text-foreground/55" dir="ltr">
+        {box?.address ?? "…"}
+      </span>
+      <span className="shrink-0 text-foreground/35 transition-colors group-hover:text-foreground/70">
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </span>
+    </button>
   );
 
+  /* ── Search: hairline field, no chrome ── */
   const Search = (
-    <div className="mt-4 flex items-center gap-2 rounded-full border border-foreground/10 bg-foreground/[0.03] px-4 h-11">
-      <SearchIcon className="w-4 h-4 text-foreground/40 shrink-0" />
+    <div className="flex h-10 items-center gap-2.5 rounded-xl bg-foreground/[0.045] px-3.5">
+      <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={tx("Search email")}
-        className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/40"
+        className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/35"
       />
       {query && (
-        <button type="button" aria-label={tx("Clear")} onClick={() => setQuery("")}>
+        <button type="button" aria-label={tx("Clear")} onClick={() => setQuery("")} className="shrink-0">
           <span className="contents">
-            <X className="w-4 h-4 text-foreground/40" />
+            <X className="h-4 w-4 text-foreground/35" />
           </span>
         </button>
       )}
     </div>
   );
 
+  /* ── Folders: text-only segmented rail ── */
   const Tabs = (
-    <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+    <div className="flex items-center gap-5 overflow-x-auto no-scrollbar border-b border-foreground/[0.08]">
       {FOLDERS.map((f) => {
-        const Icon = f.icon;
         const active = folder === f.key;
         return (
           <button
             key={f.key}
             onClick={() => setFolder(f.key)}
-            className={`inline-flex items-center gap-2 shrink-0 rounded-full px-4 py-2 text-[13px] transition-colors ${
-              active
-                ? "bg-foreground text-background"
-                : "bg-foreground/[0.04] text-foreground/70 hover:bg-foreground/[0.08]"
+            className={`relative shrink-0 pb-2.5 text-[13.5px] transition-colors ${
+              active ? "text-foreground" : "text-foreground/45 hover:text-foreground/70"
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            <span>{tx(f.label)}</span>
-            {f.key === "inbox" && folder === "inbox" && unread > 0 && (
-              <span
-                className={`rounded-full px-1.5 text-[11px] ${
-                  active ? "bg-background/20" : "bg-foreground/10"
-                }`}
-              >
-                {unread}
-              </span>
+            <span className={active ? "font-semibold" : ""}>{tx(f.label)}</span>
+            {f.key === "inbox" && unread > 0 && (
+              <span className="ms-1.5 text-[11.5px] tabular-nums text-foreground/40">{unread}</span>
+            )}
+            {active && (
+              <span className="absolute inset-x-0 -bottom-px h-[2px] rounded-full bg-foreground" />
             )}
           </button>
         );
@@ -291,49 +231,55 @@ export default function MailPage() {
     </div>
   );
 
+  /* ── List: airy rows, hairline dividers, quiet typography ── */
   const List = (
-    <div className="mt-3 rounded-[28px] border border-foreground/10 bg-foreground/[0.015] overflow-hidden divide-y divide-foreground/[0.06]">
+    <div>
       {loading && (
-        <div className="p-10 grid place-items-center text-foreground/50">
-          <Loader2 className="w-5 h-5 animate-spin" />
+        <div className="grid place-items-center py-16 text-foreground/40">
+          <Loader2 className="h-5 w-5 animate-spin" />
         </div>
       )}
       {!loading && visible.length === 0 && (
-        <p className="p-10 text-center text-[13px] text-foreground/50">{tx("No messages here")}</p>
+        <p className="py-16 text-center text-[13.5px] text-foreground/40">{tx("No messages here")}</p>
       )}
       {!loading &&
         visible.map((m) => {
-          const who = folder === "sent" ? m.to_address : m.from_name || m.from_address;
+          const addr = folder === "sent" ? m.to_address : m.from_address;
+          const who = displayName(folder === "sent" ? null : m.from_name, addr);
           return (
             <button
               key={m.id}
               onClick={() => void openMessage(m)}
-              className="w-full text-start px-4 py-3.5 hover:bg-foreground/[0.04] transition-colors flex gap-3"
+              className="group flex w-full gap-3 border-b border-foreground/[0.06] py-3.5 text-start transition-colors hover:bg-foreground/[0.025]"
             >
-              <span
-                className={`mt-0.5 grid place-items-center w-10 h-10 shrink-0 rounded-full text-[13px] font-semibold ${avatarTone(
-                  folder === "sent" ? m.to_address : m.from_address,
-                )}`}
-              >
-                {initials(folder === "sent" ? m.to_address : m.from_address)}
+              <span className="relative mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/[0.06] text-[11px] font-semibold text-foreground/70">
+                {initials(who)}
+                {!m.is_read && (
+                  <span className="absolute -start-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
+                )}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  {m.origin === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
+                <span className="flex items-baseline gap-2">
                   <span
                     className={`min-w-0 flex-1 truncate text-[14px] ${
-                      m.is_read ? "text-foreground/70" : "font-semibold"
+                      m.is_read ? "font-medium text-foreground/75" : "font-semibold text-foreground"
                     }`}
                   >
                     {who}
                   </span>
-                  <span className="text-[11px] text-foreground/40 shrink-0">{fmtDate(m.created_at)}</span>
-                  {!m.is_read && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+                  {m.origin === "ai" && <Bot className="h-3.5 w-3.5 shrink-0 self-center text-foreground/35" />}
+                  <span className="shrink-0 text-[11.5px] tabular-nums text-foreground/35">
+                    {fmtDate(m.created_at)}
+                  </span>
                 </span>
-                <span className={`mt-0.5 block truncate text-[13.5px] ${m.is_read ? "" : "font-semibold"}`}>
+                <span
+                  className={`mt-0.5 block truncate text-[13.5px] ${
+                    m.is_read ? "text-foreground/70" : "font-medium text-foreground"
+                  }`}
+                >
                   {m.subject || tx("(no subject)")}
                 </span>
-                <span className="mt-0.5 block truncate text-[12.5px] text-foreground/45">{m.snippet}</span>
+                <span className="mt-0.5 block truncate text-[12.5px] text-foreground/40">{m.snippet}</span>
               </span>
             </button>
           );
@@ -342,11 +288,24 @@ export default function MailPage() {
   );
 
   const Body = (
-    <section className="pb-10">
-      {Header}
-      {Search}
-      {Tabs}
+    <section className="pb-24">
+      <div className="space-y-3.5">
+        {AddressBar}
+        {Search}
+        {Tabs}
+      </div>
       {List}
+
+      {/* Compose: floating, single primary action */}
+      <button
+        type="button"
+        onClick={() => setDraft({ to: "", subject: "", text: "" })}
+        className="fixed bottom-24 end-5 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-foreground px-5 text-[14px] font-semibold text-background shadow-lg shadow-foreground/20 transition-transform hover:scale-[1.03] md:bottom-8"
+      >
+        <PenLine className="h-4 w-4" />
+        <span>{tx("Compose")}</span>
+      </button>
+
       {open && (
         <MessageView
           msg={open}
@@ -373,6 +332,19 @@ export default function MailPage() {
     </section>
   );
 
+  const RefreshBtn = (
+    <button
+      type="button"
+      aria-label={tx("Refresh")}
+      onClick={() => void refresh(folder)}
+      className="grid h-9 w-9 place-items-center rounded-full text-foreground/50 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
+    >
+      <span className="contents">
+        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+      </span>
+    </button>
+  );
+
   if (isMobile) {
     return (
       <ProfileGlassShell
@@ -380,6 +352,7 @@ export default function MailPage() {
         subtitle={tx("Your own Megsy inbox")}
         onBack={() => (window.history.length > 1 ? window.history.back() : navigate("/settings"))}
       >
+        <div className="mb-1 flex justify-end">{RefreshBtn}</div>
         {Body}
       </ProfileGlassShell>
     );
@@ -387,11 +360,12 @@ export default function MailPage() {
   return (
     <DesktopSettingsLayout>
       <div className="mx-auto w-full max-w-2xl px-4 md:px-0">
-        <header className="mb-6 flex items-center gap-2">
+        <header className="mb-5 flex items-center gap-2">
           <Button variant="ghost" size="icon" aria-label={tx("Back")} onClick={() => navigate("/settings")}>
-            <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
-          <h1 className="text-[28px] font-semibold tracking-tight">{tx("Mail")}</h1>
+          <h1 className="flex-1 text-[26px] font-semibold tracking-tight">{tx("Mail")}</h1>
+          {RefreshBtn}
         </header>
         {Body}
       </div>
@@ -404,11 +378,11 @@ function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () =
   // icon-bearing controls, and the overlay must escape that scope.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-black/50 backdrop-blur-sm p-0 sm:p-6"
+      className="fixed inset-0 z-50 grid place-items-end bg-black/40 backdrop-blur-[2px] sm:place-items-center sm:p-6"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-xl max-h-[88vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-foreground/10 bg-background p-5"
+        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[28px] border border-foreground/10 bg-background sm:max-w-2xl sm:rounded-[24px]"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
@@ -426,7 +400,7 @@ function HtmlBody({ html }: { html: string }) {
   // Remote scripts are stripped; the frame is origin-less and only reports its height.
   const safe = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/ on[a-z]+=("[^"]*"|'[^']*')/gi, "");
   const doc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>
-    body{margin:0;padding:0;font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:#111;background:#fff;word-break:break-word}
+    body{margin:0;padding:0;font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:#111;background:#fff;word-break:break-word}
     img{max-width:100%;height:auto}table{max-width:100%}
   </style></head><body>${safe}<script>
     (function(){var s=function(){parent.postMessage({t:"mail-h",id:${JSON.stringify(frameId)},h:document.documentElement.scrollHeight},"*")};
@@ -438,7 +412,7 @@ function HtmlBody({ html }: { html: string }) {
     const onMsg = (e: MessageEvent) => {
       const d = e.data as { t?: string; id?: string; h?: number } | null;
       if (!d || d.t !== "mail-h" || d.id !== frameId || !d.h) return;
-      setHeight(Math.min(Math.max(d.h + 16, 120), 4000));
+      setHeight(Math.min(Math.max(d.h + 16, 120), 6000));
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
@@ -450,7 +424,7 @@ function HtmlBody({ html }: { html: string }) {
       sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
       srcDoc={doc}
       style={{ height }}
-      className="mt-4 w-full rounded-2xl border border-foreground/10 bg-white"
+      className="w-full rounded-xl bg-white"
     />
   );
 }
@@ -491,81 +465,128 @@ function MessageView({
     }
   };
 
+  const who = displayName(msg.from_name, msg.from_address);
+
   return (
     <Sheet onClose={onClose}>
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[18px] font-semibold leading-snug">{msg.subject || tx("(no subject)")}</h2>
-          <div className="mt-2 flex items-center gap-2.5">
-            <span className="grid place-items-center w-8 h-8 shrink-0 rounded-full bg-foreground/[0.07] text-[12px] font-semibold">
-              {initials(msg.from_address)}
-            </span>
-            <div className="min-w-0">
-              <p className="text-[13px] font-medium truncate" dir="ltr">
-                {msg.from_name || msg.from_address}
-              </p>
-              <p className="text-[11.5px] text-foreground/50 truncate" dir="ltr">
-                {tx("To")}: {msg.to_address} · {new Date(msg.created_at).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" aria-label={tx("Close")} onClick={onClose}>
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-
-      {msg.body_html ? (
-        <HtmlBody html={msg.body_html} />
-      ) : (
-        <p className="mt-4 whitespace-pre-wrap text-[14px] leading-relaxed">{msg.body_text}</p>
-      )}
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => onReply(msg)}>
-          <CornerUpLeft className="w-4 h-4 rtl:rotate-180" />
-          {tx("Reply")}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => onForward(msg)}>
-          <Forward className="w-4 h-4 rtl:rotate-180" />
-          {tx("Forward")}
-        </Button>
-        <Button variant="outline" size="sm" disabled={explaining} onClick={() => void explain()}>
-          {explaining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {tx("Explain with AI")}
-        </Button>
-      </div>
-
-      {explanation && (
-        <div className="mt-4 rounded-2xl border border-primary/25 bg-primary/[0.06] p-4">
-          <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-primary">
-            <Sparkles className="w-3.5 h-3.5" />
-            {tx("Megsy's summary")}
-          </p>
-          <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
-        </div>
-      )}
-
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-foreground/10 pt-4">
-        {folder !== "spam" && (
-          <Button variant="ghost" size="sm" onClick={() => onAct(msg, "spam")}>
+      {/* Sticky toolbar */}
+      <div className="flex items-center gap-1 border-b border-foreground/[0.08] px-3 py-2">
+        <button
+          type="button"
+          aria-label={tx("Close")}
+          onClick={onClose}
+          className="grid h-9 w-9 place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/[0.06]"
+        >
+          <span className="contents">
+            <X className="h-4 w-4" />
+          </span>
+        </button>
+        <div className="flex-1" />
+        {folder !== "spam" ? (
+          <button
+            type="button"
+            onClick={() => onAct(msg, "spam")}
+            className="rounded-full px-3 py-1.5 text-[12.5px] text-foreground/55 transition-colors hover:bg-foreground/[0.06]"
+          >
             {tx("Mark as spam")}
-          </Button>
-        )}
-        {folder === "spam" && (
-          <Button variant="ghost" size="sm" onClick={() => onAct(msg, "inbox")}>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onAct(msg, "inbox")}
+            className="rounded-full px-3 py-1.5 text-[12.5px] text-foreground/55 transition-colors hover:bg-foreground/[0.06]"
+          >
             {tx("Not spam")}
-          </Button>
+          </button>
         )}
         {folder !== "trash" ? (
-          <Button variant="ghost" size="sm" onClick={() => onAct(msg, "trash")}>
+          <button
+            type="button"
+            onClick={() => onAct(msg, "trash")}
+            className="rounded-full px-3 py-1.5 text-[12.5px] text-foreground/55 transition-colors hover:bg-foreground/[0.06]"
+          >
             {tx("Move to trash")}
-          </Button>
+          </button>
         ) : (
-          <Button variant="destructive" size="sm" onClick={() => onAct(msg, "delete")}>
+          <button
+            type="button"
+            onClick={() => onAct(msg, "delete")}
+            className="rounded-full px-3 py-1.5 text-[12.5px] text-destructive transition-colors hover:bg-destructive/10"
+          >
             {tx("Delete forever")}
-          </Button>
+          </button>
         )}
+      </div>
+
+      {/* Scrollable body */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+        <h2 className="text-[21px] font-semibold leading-snug tracking-tight">
+          {msg.subject || tx("(no subject)")}
+        </h2>
+
+        <div className="mt-3.5 flex items-center gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/[0.06] text-[12px] font-semibold text-foreground/70">
+            {initials(who)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13.5px] font-medium" dir="ltr">
+              {who}
+            </p>
+            <p className="truncate text-[11.5px] text-foreground/45" dir="ltr">
+              {msg.from_address}
+            </p>
+          </div>
+          <span className="shrink-0 text-[11.5px] text-foreground/40">
+            {new Date(msg.created_at).toLocaleString()}
+          </span>
+        </div>
+
+        <div className="my-5 h-px bg-foreground/[0.08]" />
+
+        {msg.body_html ? (
+          <HtmlBody html={msg.body_html} />
+        ) : (
+          <p className="whitespace-pre-wrap text-[14.5px] leading-[1.75]">{msg.body_text}</p>
+        )}
+
+        {explanation && (
+          <div className="mt-6 rounded-2xl bg-foreground/[0.04] p-4">
+            <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-foreground/60">
+              <Sparkles className="h-3.5 w-3.5" />
+              {tx("Megsy's summary")}
+            </p>
+            <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Action bar */}
+      <div className="flex items-center gap-2 border-t border-foreground/[0.08] px-4 py-3">
+        <button
+          type="button"
+          onClick={() => onReply(msg)}
+          className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-foreground text-[13.5px] font-semibold text-background transition-opacity hover:opacity-90"
+        >
+          <CornerUpLeft className="h-4 w-4 rtl:rotate-180" />
+          {tx("Reply")}
+        </button>
+        <button
+          type="button"
+          onClick={() => onForward(msg)}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-foreground/12 px-4 text-[13.5px] text-foreground/75 transition-colors hover:bg-foreground/[0.05]"
+        >
+          <Forward className="h-4 w-4 rtl:rotate-180" />
+          {tx("Forward")}
+        </button>
+        <button
+          type="button"
+          disabled={explaining}
+          onClick={() => void explain()}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-foreground/12 px-4 text-[13.5px] text-foreground/75 transition-colors hover:bg-foreground/[0.05] disabled:opacity-60"
+        >
+          {explaining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          <span className="hidden sm:inline">{tx("Explain with AI")}</span>
+        </button>
       </div>
     </Sheet>
   );
@@ -608,28 +629,60 @@ function Composer({
 
   return (
     <Sheet onClose={onClose}>
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 text-[17px] font-semibold">{tx("New message")}</h2>
-        <Button variant="ghost" size="icon" aria-label={tx("Close")} onClick={onClose}>
-          <X className="w-4 h-4" />
-        </Button>
+      <div className="flex items-center gap-2 border-b border-foreground/[0.08] px-4 py-2.5">
+        <button
+          type="button"
+          aria-label={tx("Close")}
+          onClick={onClose}
+          className="grid h-9 w-9 place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/[0.06]"
+        >
+          <span className="contents">
+            <X className="h-4 w-4" />
+          </span>
+        </button>
+        <h2 className="flex-1 text-[15px] font-semibold">{tx("New message")}</h2>
+        <button
+          type="button"
+          disabled={busy || !to.trim()}
+          onClick={() => void submit()}
+          className="inline-flex h-9 items-center gap-2 rounded-full bg-foreground px-4 text-[13.5px] font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          <span>{tx("Send")}</span>
+        </button>
       </div>
-      <p className="mt-1 text-[12px] text-foreground/55">
-        {tx("From")}: <span dir="ltr">{from}</span>
-      </p>
-      <div className="mt-4 space-y-3">
-        <Input dir="ltr" placeholder={tx("To")} value={to} onChange={(e) => setTo(e.target.value)} />
-        <Input placeholder={tx("Subject")} value={subject} onChange={(e) => setSubject(e.target.value)} />
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex items-center gap-3 border-b border-foreground/[0.07] py-2.5">
+          <span className="w-14 shrink-0 text-[12.5px] text-foreground/40">{tx("From")}</span>
+          <span className="min-w-0 truncate text-[13.5px] text-foreground/70" dir="ltr">
+            {from}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 border-b border-foreground/[0.07] py-1">
+          <span className="w-14 shrink-0 text-[12.5px] text-foreground/40">{tx("To")}</span>
+          <Input
+            dir="ltr"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="h-9 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+          />
+        </div>
+        <div className="flex items-center gap-3 border-b border-foreground/[0.07] py-1">
+          <span className="w-14 shrink-0 text-[12.5px] text-foreground/40">{tx("Subject")}</span>
+          <Input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="h-9 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+          />
+        </div>
         <Textarea
-          rows={9}
+          rows={12}
           placeholder={tx("Write your message…")}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          className="mt-3 resize-none border-0 bg-transparent px-0 text-[14.5px] leading-relaxed shadow-none focus-visible:ring-0"
         />
-        <Button className="w-full" disabled={busy || !to.trim()} onClick={() => void submit()}>
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          <span>{tx("Send")}</span>
-        </Button>
       </div>
     </Sheet>
   );
