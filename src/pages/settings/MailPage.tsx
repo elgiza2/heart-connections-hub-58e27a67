@@ -178,7 +178,7 @@ export default function MailPage() {
         <div className="flex items-center gap-3">
           <div className="grid place-items-center w-11 h-11 rounded-full bg-background/15">
             <span className="contents">
-              <Mail className="w-5 h-5" />
+              <Mail className="w-5 h-5 text-background" />
             </span>
           </div>
           <div className="min-w-0 flex-1">
@@ -198,7 +198,7 @@ export default function MailPage() {
             }}
           >
             <span className="contents">
-              <Copy className="w-4 h-4" />
+              <Copy className="w-4 h-4 text-background" />
             </span>
           </button>
         </div>
@@ -232,7 +232,7 @@ export default function MailPage() {
             className="grid place-items-center w-11 h-11 rounded-full bg-background/15 hover:bg-background/25 transition-colors"
           >
             <span className="contents">
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-4 h-4 text-background ${loading ? "animate-spin" : ""}`} />
             </span>
           </button>
         </div>
