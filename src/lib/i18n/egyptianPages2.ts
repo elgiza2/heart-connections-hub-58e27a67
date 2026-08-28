@@ -480,4 +480,14 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
     "اتحطت في الطابور — الإرسال للخارج هيشتغل أول ما الدومين يترب",
   "This inbox belongs to you and to Megsy. The assistant can send mail and read replies here when you ask it to sign up for a service or follow up on something.":
     "البريد ده بتاعك وبتاع Megsy كمان. المساعد يقدر يبعت رسايل ويقرا الردود من هنا لما تطلب منه يسجّل في خدمة أو يتابع حاجة.",
+  Reply: "رد",
+  Forward: "تحويل",
+  "Explain with AI": "اشرح بالذكاء الاصطناعي",
+  "Megsy's summary": "ملخص Megsy",
+  "No explanation available": "مفيش شرح متاح",
+  "Forwarded message": "رسالة محوّلة",
+  "New message": "رسالة جديدة",
+  "Your Megsy address": "عنوان Megsy بتاعك",
+  "Copy address": "انسخ العنوان",
+  "Your own Megsy inbox": "صندوق بريد Megsy بتاعك",
 };
