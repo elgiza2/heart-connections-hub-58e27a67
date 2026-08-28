@@ -106,6 +106,16 @@ const lookup = (raw: string): string | null => {
 };
 
 
+/** True when the element only holds text / plain inline spans (safe to flatten). */
+const isFlattenable = (el: Element) => {
+  if (el.children.length === 0 || el.children.length > 6) return false;
+  for (const child of Array.from(el.children)) {
+    if (child.tagName !== "SPAN" && child.tagName !== "B" && child.tagName !== "I") return false;
+    if (child.children.length) return false;
+  }
+  return true;
+};
+
 const translateNode = (node: Text) => {
   const parent = node.parentElement;
   if (!parent || SKIP_TAGS.has(parent.tagName)) return;
@@ -114,12 +124,20 @@ const translateNode = (node: Text) => {
   if (optOut && optOut !== document.documentElement) return;
   const original = node.nodeValue || "";
   const hit = lookup(original);
-  if (!hit) return;
+  if (!hit) {
+    // The sentence may be split across sibling spans — try the parent as a whole.
+    if (isFlattenable(parent)) {
+      const whole = lookup(parent.textContent || "");
+      if (whole) parent.textContent = whole;
+    }
+    return;
+  }
   // Preserve the surrounding whitespace so inline layouts stay intact.
   const lead = original.match(/^\s*/)?.[0] ?? "";
   const tail = original.match(/\s*$/)?.[0] ?? "";
   node.nodeValue = `${lead}${hit}${tail}`;
 };
+
 
 const translateAttrs = (el: Element) => {
   for (const attr of ATTRS) {
