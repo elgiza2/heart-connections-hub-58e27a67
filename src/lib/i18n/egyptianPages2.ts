@@ -362,4 +362,11 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "MC & Subscription": "الكريدت والاشتراك",
   "to confirm": "للتأكيد",
   "Delete my account": "امسح حسابي",
+  "Two-factor authentication is currently disabled.": "التحقق بخطوتين مقفول دلوقتي.",
+  "Disabled": "مقفول",
+  "Turn on 2FA to require a code from your authenticator app at sign in.": "فعّل التحقق بخطوتين عشان يطلب منك كود من تطبيق المصادقة عند الدخول.",
+  "Enable 2FA": "فعّل التحقق بخطوتين",
+  "Designs personalized study plans, generates spaced-repetition flashcards, and uses Socratic questioning to deepen understanding of any subject. Trigger when studying or learning something new.": "بيعملك خطط مذاكرة مخصصة وكروت مراجعة بالتكرار المتباعد وبيستخدم أسئلة سقراطية عشان تفهم أي مادة بعمق. استخدمه وإنت بتذاكر أو بتتعلم حاجة جديدة.",
+  "starter": "مبتدئ",
+  "elite": "إيليت",
 };
