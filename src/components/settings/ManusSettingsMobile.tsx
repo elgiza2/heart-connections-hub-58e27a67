@@ -123,6 +123,7 @@ const ManusSettingsMobile = () => {
       },
     },
     { icon: Languages, label: "Language", trailing: langLabel, path: "/settings/language" },
+    { icon: MailIcon, label: "Mail", trailing: "@megsyai.com", path: "/settings/mail" },
   ];
 
 
