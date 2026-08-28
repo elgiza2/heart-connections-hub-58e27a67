@@ -712,7 +712,6 @@ const PricingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.6 }}
             className="text-foreground/70 font-light leading-relaxed max-w-xs sm:max-w-md text-sm sm:text-base md:text-lg"
-            dir={"ltr"}
           >
             {`Simple plans for the entire ${BRAND} ecosystem, built for creators, teams and enterprises.`}
           </motion.p>
@@ -729,8 +728,7 @@ const PricingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 2.2 }}
               className="mt-6 sm:mt-8 inline-flex flex-col md:flex-row items-center md:items-stretch gap-5 md:gap-6 px-6 sm:px-7 py-4 rounded-2xl mobile-menu-glass"
-              dir={"ltr"}
-            >
+              >
               <div className="flex flex-col items-center md:items-start text-center md:text-start gap-1.5">
                 <span
                   className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] uppercase font-medium text-foreground bg-foreground/10 border border-foreground/10"
