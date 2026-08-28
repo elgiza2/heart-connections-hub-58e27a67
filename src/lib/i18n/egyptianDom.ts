@@ -1,7 +1,14 @@
 import { EGYPTIAN_DICT } from "./egyptianDict";
 import { EGYPTIAN_EXTRA } from "./egyptianExtra";
+import { EGYPTIAN_PAGES } from "./egyptianPages";
+import { EGYPTIAN_PAGES_2 } from "./egyptianPages2";
 
-const DICT: Record<string, string> = { ...EGYPTIAN_DICT, ...EGYPTIAN_EXTRA };
+const DICT: Record<string, string> = {
+  ...EGYPTIAN_DICT,
+  ...EGYPTIAN_EXTRA,
+  ...EGYPTIAN_PAGES,
+  ...EGYPTIAN_PAGES_2,
+};
 
 
 /**
@@ -26,9 +33,62 @@ const SKIP_TAGS = new Set([
 
 const ATTRS = ["placeholder", "aria-label", "title", "alt"] as const;
 
+const MONTHS: Record<string, string> = {
+  January: "يناير",
+  February: "فبراير",
+  March: "مارس",
+  April: "أبريل",
+  May: "مايو",
+  June: "يونيو",
+  July: "يوليو",
+  August: "أغسطس",
+  September: "سبتمبر",
+  October: "أكتوبر",
+  November: "نوفمبر",
+  December: "ديسمبر",
+  Jan: "يناير",
+  Feb: "فبراير",
+  Mar: "مارس",
+  Apr: "أبريل",
+  Jun: "يونيو",
+  Jul: "يوليو",
+  Aug: "أغسطس",
+  Sep: "سبتمبر",
+  Oct: "أكتوبر",
+  Nov: "نوفمبر",
+  Dec: "ديسمبر",
+};
+
+/** Patterns for strings that carry a runtime value and can't be a plain key. */
+const patterns: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
+  // "Add Code Reviewer" (aria-labels built from a skill name)
+  [/^Add (.+)$/, (m) => `أضف ${DICT[m[1]] || m[1]}`],
+  // "Remove Travel Planner"
+  [/^Remove (.+)$/, (m) => `شيل ${DICT[m[1]] || m[1]}`],
+  // "August 26, 2026" / "Jul 25, 2026"
+  [
+    /^([A-Za-z]{3,9}) (\d{1,2}), (\d{4})$/,
+    (m) => (MONTHS[m[1]] ? `${m[2]} ${MONTHS[m[1]]} ${m[3]}` : m[0]),
+  ],
+  // "800 points to go — about 80 more friends."
+  [
+    /^(\d+) points to go — about (\d+) more friends\.$/,
+    (m) => `فاضل ${m[1]} نقطة — يعني حوالي ${m[2]} صاحب كمان.`,
+  ],
+  // "App Version 4.12.0 • Build 992"
+  [/^App Version (.+) • Build (.+)$/, (m) => `إصدار التطبيق ${m[1]} • بيلد ${m[2]}`],
+];
+
+/** Case-insensitive index (CSS text-transform means the DOM text may be uppercased). */
+const LOWER: Record<string, string> = {};
+for (const k of Object.keys(DICT)) {
+  const lk = k.toLowerCase();
+  if (!(lk in LOWER)) LOWER[lk] = DICT[k];
+}
+
 const lookup = (raw: string): string | null => {
   const text = raw.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
-  if (!text || text.length > 400) return null;
+  if (!text || text.length > 700) return null;
   // Skip pure numbers / symbols — nothing to translate.
   if (!/[A-Za-z]/.test(text)) return null;
   const hit = DICT[text];
@@ -36,8 +96,15 @@ const lookup = (raw: string): string | null => {
   // Try without a trailing punctuation mark.
   const stripped = text.replace(/[.:!?]+$/, "");
   if (stripped !== text && DICT[stripped]) return DICT[stripped];
+  const lower = LOWER[text.toLowerCase()] || LOWER[stripped.toLowerCase()];
+  if (lower) return lower;
+  for (const [re, build] of patterns) {
+    const m = text.match(re);
+    if (m) return build(m);
+  }
   return null;
 };
+
 
 const translateNode = (node: Text) => {
   const parent = node.parentElement;
