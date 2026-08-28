@@ -142,50 +142,99 @@ export default function MailPage() {
     });
   };
 
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((m) =>
+      [m.subject, m.snippet, m.from_address, m.from_name, m.to_address]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [items, query]);
+
+  const aiCount = useMemo(() => items.filter((m) => m.origin === "ai").length, [items]);
+
   const Header = (
-    <div className="rounded-3xl border border-foreground/10 bg-foreground/[0.03] p-4">
-      <div className="flex items-center gap-3">
-        <div className="grid place-items-center w-10 h-10 rounded-2xl bg-foreground/[0.06]">
-          <Mail className="w-5 h-5" />
+    <div className="overflow-hidden rounded-[28px] bg-foreground text-background">
+      <div className="p-5">
+        <div className="flex items-center gap-3">
+          <div className="grid place-items-center w-11 h-11 rounded-full bg-background/15">
+            <Mail className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold truncate" dir="ltr">
+              {box?.address ?? "…"}
+            </p>
+            <p className="text-[12px] text-background/60">{tx("Your Megsy address")}</p>
+          </div>
+          <button
+            type="button"
+            aria-label={tx("Copy address")}
+            className="grid place-items-center w-9 h-9 rounded-full bg-background/15 hover:bg-background/25 transition-colors"
+            onClick={() => {
+              if (!box) return;
+              void navigator.clipboard.writeText(box.address);
+              toast.success(tx("Copied"));
+            }}
+          >
+            <Copy className="w-4 h-4" />
+          </button>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] text-foreground/50">{tx("Your Megsy address")}</p>
-          <p className="text-[15px] font-medium truncate" dir="ltr">
-            {box?.address ?? "…"}
-          </p>
+
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[
+            { n: unread, l: "Unread" },
+            { n: visible.length, l: "Messages" },
+            { n: aiCount, l: "From Megsy" },
+          ].map((s) => (
+            <div key={s.l} className="rounded-2xl bg-background/10 px-3 py-2.5 text-center">
+              <p className="text-[18px] font-semibold leading-none">{s.n}</p>
+              <p className="mt-1 text-[11px] text-background/60">{tx(s.l)}</p>
+            </div>
+          ))}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={tx("Copy address")}
-          onClick={() => {
-            if (!box) return;
-            void navigator.clipboard.writeText(box.address);
-            toast.success(tx("Copied"));
-          }}
-        >
-          <Copy className="w-4 h-4" />
-        </Button>
-      </div>
-      <p className="mt-3 text-[12px] leading-relaxed text-foreground/55">
-        {tx(
-          "This inbox belongs to you and to Megsy. The assistant can send mail and read replies here when you ask it to sign up for a service or follow up on something.",
-        )}
-      </p>
-      <div className="mt-3 flex gap-2">
-        <Button className="flex-1" onClick={() => setDraft({ to: "", subject: "", text: "" })}>
-          <Send className="w-4 h-4" />
-          <span>{tx("New message")}</span>
-        </Button>
-        <Button variant="outline" size="icon" aria-label={tx("Refresh")} onClick={() => void refresh(folder)}>
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-        </Button>
+
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setDraft({ to: "", subject: "", text: "" })}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-background text-foreground text-[14px] font-semibold h-11 hover:opacity-90 transition-opacity"
+          >
+            <Send className="w-4 h-4" />
+            <span>{tx("New message")}</span>
+          </button>
+          <button
+            type="button"
+            aria-label={tx("Refresh")}
+            onClick={() => void refresh(folder)}
+            className="grid place-items-center w-11 h-11 rounded-full bg-background/15 hover:bg-background/25 transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
     </div>
   );
 
+  const Search = (
+    <div className="mt-4 flex items-center gap-2 rounded-full border border-foreground/10 bg-foreground/[0.03] px-4 h-11">
+      <SearchIcon className="w-4 h-4 text-foreground/40 shrink-0" />
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={tx("Search email")}
+        className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/40"
+      />
+      {query && (
+        <button type="button" aria-label={tx("Clear")} onClick={() => setQuery("")}>
+          <X className="w-4 h-4 text-foreground/40" />
+        </button>
+      )}
+    </div>
+  );
+
   const Tabs = (
-    <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar">
+    <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
       {FOLDERS.map((f) => {
         const Icon = f.icon;
         const active = folder === f.key;
@@ -193,16 +242,22 @@ export default function MailPage() {
           <button
             key={f.key}
             onClick={() => setFolder(f.key)}
-            className={`inline-flex items-center gap-2 shrink-0 rounded-full px-3.5 py-2 text-[13px] border transition-colors ${
+            className={`inline-flex items-center gap-2 shrink-0 rounded-full px-4 py-2 text-[13px] transition-colors ${
               active
-                ? "bg-foreground/[0.08] border-foreground/20"
-                : "bg-foreground/[0.02] border-foreground/10 hover:bg-foreground/[0.05]"
+                ? "bg-foreground text-background"
+                : "bg-foreground/[0.04] text-foreground/70 hover:bg-foreground/[0.08]"
             }`}
           >
             <Icon className="w-3.5 h-3.5" />
             <span>{tx(f.label)}</span>
             {f.key === "inbox" && folder === "inbox" && unread > 0 && (
-              <span className="rounded-full bg-primary/20 px-1.5 text-[11px]">{unread}</span>
+              <span
+                className={`rounded-full px-1.5 text-[11px] ${
+                  active ? "bg-background/20" : "bg-foreground/10"
+                }`}
+              >
+                {unread}
+              </span>
             )}
           </button>
         );
@@ -211,43 +266,48 @@ export default function MailPage() {
   );
 
   const List = (
-    <div className="mt-4 rounded-3xl border border-foreground/10 overflow-hidden divide-y divide-foreground/[0.06]">
+    <div className="mt-3 rounded-[28px] border border-foreground/10 bg-foreground/[0.015] overflow-hidden divide-y divide-foreground/[0.06]">
       {loading && (
         <div className="p-10 grid place-items-center text-foreground/50">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
       )}
-      {!loading && items.length === 0 && (
+      {!loading && visible.length === 0 && (
         <p className="p-10 text-center text-[13px] text-foreground/50">{tx("No messages here")}</p>
       )}
       {!loading &&
-        items.map((m) => {
+        visible.map((m) => {
           const who = folder === "sent" ? m.to_address : m.from_name || m.from_address;
           return (
             <button
               key={m.id}
               onClick={() => void openMessage(m)}
-              className="w-full text-start px-4 py-3 hover:bg-foreground/[0.03] transition-colors flex gap-3"
+              className="w-full text-start px-4 py-3.5 hover:bg-foreground/[0.04] transition-colors flex gap-3"
             >
-              <span className="mt-0.5 grid place-items-center w-9 h-9 shrink-0 rounded-full bg-foreground/[0.07] text-[13px] font-semibold">
+              <span
+                className={`mt-0.5 grid place-items-center w-10 h-10 shrink-0 rounded-full text-[13px] font-semibold ${avatarTone(
+                  folder === "sent" ? m.to_address : m.from_address,
+                )}`}
+              >
                 {initials(folder === "sent" ? m.to_address : m.from_address)}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   {m.origin === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
                   <span
-                    className={`min-w-0 flex-1 truncate text-[13px] ${
+                    className={`min-w-0 flex-1 truncate text-[14px] ${
                       m.is_read ? "text-foreground/70" : "font-semibold"
                     }`}
                   >
                     {who}
                   </span>
                   <span className="text-[11px] text-foreground/40 shrink-0">{fmtDate(m.created_at)}</span>
+                  {!m.is_read && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
                 </span>
                 <span className={`mt-0.5 block truncate text-[13.5px] ${m.is_read ? "" : "font-semibold"}`}>
                   {m.subject || tx("(no subject)")}
                 </span>
-                <span className="block truncate text-[12px] text-foreground/50">{m.snippet}</span>
+                <span className="mt-0.5 block truncate text-[12.5px] text-foreground/45">{m.snippet}</span>
               </span>
             </button>
           );
