@@ -153,7 +153,7 @@ const UI_DICT: Record<string, Entry> = {
   logIn: { en: "Log in", "ar-eg": "دخول" },
   upgrade: { en: "Upgrade", "ar-eg": "ترقية" },
   getPlus: { en: "Get Plus", "ar-eg": "هات بلس" },
-  placeholderAsk: { en: "Ask Megsy anything…", "ar-eg": "اسأل ميغسي أي حاجة…" },
+  placeholderAsk: { en: "Ask Megsy anything…", "ar-eg": "اسأل Megsy أي حاجة…" },
   placeholderProject: { en: "Start your next project with one idea…", "ar-eg": "ابدأ مشروعك الجاي بفكرة واحدة…" },
   greeting1: { en: "Let's cook something up.", "ar-eg": "يلا نعمل حاجة حلوة." },
   greeting2: { en: "What should we build today?", "ar-eg": "نبني إيه النهارده؟" },
@@ -163,7 +163,7 @@ const UI_DICT: Record<string, Entry> = {
 
   placeholderAllInOne: { en: "Design, write, research — all in one place", "ar-eg": "صمّم واكتب وابحث — كله في مكان واحد" },
   placeholderType: { en: "Type a question and let's get started", "ar-eg": "اكتب سؤال ويلا نبدأ" },
-  megsyAsking: { en: "Megsy is asking", "ar-eg": "ميغسي بيسأل" },
+  megsyAsking: { en: "Megsy is asking", "ar-eg": "Megsy بيسأل" },
   skipQuestion: { en: "Skip question", "ar-eg": "عدّي السؤال" },
   typeOwnAnswer: { en: "Type your own answer…", "ar-eg": "اكتب إجابتك…" },
   sendAnswer: { en: "Send answer", "ar-eg": "ابعت الإجابة" },
@@ -201,7 +201,7 @@ const UI_DICT: Record<string, Entry> = {
   whatsOnYourMind: { en: "What's on your mind", "ar-eg": "بتفكر في إيه" },
   whereToToday: { en: "Where to today", "ar-eg": "رايح فين النهارده" },
   readyWhenYouAre: { en: "Ready when you are", "ar-eg": "جاهز لما تكون جاهز" },
-  loadingMegsy: { en: "Loading Megsy", "ar-eg": "ميغسي بيحمّل" },
+  loadingMegsy: { en: "Loading Megsy", "ar-eg": "Megsy بيحمّل" },
 };
 
 const STORAGE_KEY = "app_lang";
