@@ -14,6 +14,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeErrorMessage } from "@/lib/sanitizeError";
+import { EGYPTIAN_DICT } from "@/lib/i18n/egyptianDict";
+import { EGYPTIAN_EXTRA } from "@/lib/i18n/egyptianExtra";
+
 
 export type AuthLang = "en" | "ar-eg";
 
