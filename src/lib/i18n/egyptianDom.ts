@@ -109,7 +109,7 @@ const lookup = (raw: string): string | null => {
 /** True when the element only holds text / plain inline markup (safe to flatten). */
 const INLINE_OK = new Set(["SPAN", "B", "I", "EM", "STRONG", "SMALL", "S", "DEL"]);
 const isFlattenable = (el: Element) => {
-  if (!el.children.length || el.children.length > 8) return false;
+  if (el.childNodes.length < 2 || el.children.length > 8) return false;
   const all = el.querySelectorAll("*");
   if (all.length > 12) return false;
   for (const child of Array.from(all)) {
