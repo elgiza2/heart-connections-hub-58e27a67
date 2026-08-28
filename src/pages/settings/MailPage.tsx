@@ -360,17 +360,35 @@ export default function MailPage() {
   return (
     <DesktopSettingsLayout>
       <div className="mx-auto w-full max-w-2xl px-4 md:px-0">
-        <header className="mb-5 flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label={tx("Back")} onClick={() => navigate("/settings")}>
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-          </Button>
-          <h1 className="flex-1 text-[26px] font-semibold tracking-tight">{tx("Mail")}</h1>
+        <header className="mb-6 flex items-center gap-3">
+          <BackButton label={tx("Back")} onClick={() => navigate("/settings")} />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[24px] font-semibold leading-tight tracking-tight">{tx("Mail")}</h1>
+            <p className="truncate text-[12.5px] text-foreground/45" dir="ltr">
+              {box?.address ?? "…"}
+            </p>
+          </div>
           {RefreshBtn}
         </header>
         {Body}
       </div>
     </DesktopSettingsLayout>
   );
+}
+
+/** Unified, clearly visible back button used across the mail experience. */
+function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-foreground/10 bg-foreground/[0.04] text-foreground/70 shadow-sm transition-all hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground active:scale-95"
+    >
+      <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+    </button>
+  );
+}
 }
 
 function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
