@@ -423,4 +423,32 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "renews at $20/month": "بيتجدد بـ 20 دولار في الشهر",
   "cancel anytime": "تقدر تلغي في أي وقت",
   "Pay 8 months, get 12 — saves $80 vs $20/month": "ادفع 8 شهور وخد 12 — بتوفر 80 دولار مقارنة بـ 20 دولار في الشهر",
+
+  // ------------------------------------------------------- restore purchase
+  "← Back to pricing": "رجوع للأسعار →",
+  "Back to pricing": "رجوع للأسعار",
+  "Your subscription is stored on your Megsy account, not on the device. Restoring simply re-reads it from our servers and re-applies it here.":
+    "اشتراكك متسجل على حساب Megsy مش على الجهاز. الاسترجاع بس بيقرا الاشتراك تاني من السيرفرات بتاعتنا ويرجّعه هنا.",
+  "It re-checks the plan recorded for your account on our servers and re-applies the entitlements to the app on this device. It never creates a new charge.":
+    "بيراجع الخطة المسجلة لحسابك على السيرفرات ويرجّع مميزاتها للتطبيق على الجهاز ده. عمره ما بيعمل أي خصم جديد.",
+  "Plan limits and credits are enforced server-side, so a restore reflects exactly what your account is entitled to.":
+    "حدود الخطة والكريدت متحكوم فيها من السيرفر، فالاسترجاع بيرجّع بالظبط اللي حسابك مستحقه.",
+  "An active plan (": "فيه خطة شغالة (",
+  ") is linked to": ") مربوطة بـ",
+  ". All paid features are available on this device.": ". كل المميزات المدفوعة متاحة على الجهاز ده.",
+  "All paid features are available on this device.": "كل المميزات المدفوعة متاحة على الجهاز ده.",
+  "Still missing? Email": "لسه مش لاقيه؟ ابعت إيميل",
+  "from your account address with the payment date and amount. Cancellations and refunds are covered in our":
+    "من إيميل حسابك ومعاه تاريخ الدفع والمبلغ. الإلغاء والاسترجاع مشروحين في",
+
+  // ---------------------------------------------------------------- misc UI
+  "Voice input": "إدخال صوتي",
+  "Upgrade to Max": "اترقّى لـ Max",
+  "1 month": "شهر واحد",
+  "3 months": "3 شهور",
+  "6 months": "6 شهور",
+  "12 months": "12 شهر",
+  pts: "نقطة",
+  "Model settings": "إعدادات الموديل",
+  "Open model settings": "افتح إعدادات الموديل",
 };

@@ -77,6 +77,32 @@ const patterns: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
   ],
   // "App Version 4.12.0 • Build 992"
   [/^App Version (.+) • Build (.+)$/, (m) => `إصدار التطبيق ${m[1]} • بيلد ${m[2]}`],
+  // "1,500 pts to go"
+  [/^([\d,]+) pts? to go$/, (m) => `فاضل ${m[1]} نقطة`],
+  // "800 points to go"
+  [/^([\d,]+) points? to go$/, (m) => `فاضل ${m[1]} نقطة`],
+  // "Credits: 2693"
+  [/^Credits:\s*([\d,]+)$/, (m) => `الكريدت: ${m[1]}`],
+  // "Upgrade to Pro" / "Upgrade to Max"
+  [/^Upgrade to (Pro|Max|Plus|Premium)$/, (m) => `اترقّى لـ ${m[1]}`],
+  // "3 months" / "12 months"
+  [/^(\d+) months?$/, (m) => (m[1] === "1" ? "شهر واحد" : `${m[1]} شهور`)],
+  // "5 days ago" / "2 hours ago"
+  [
+    /^(\d+) (second|minute|hour|day|week|month|year)s? ago$/,
+    (m) =>
+      `من ${m[1]} ${
+        {
+          second: "ثانية",
+          minute: "دقيقة",
+          hour: "ساعة",
+          day: "يوم",
+          week: "أسبوع",
+          month: "شهر",
+          year: "سنة",
+        }[m[2]]
+      }`,
+  ],
 ];
 
 /** Case-insensitive index (CSS text-transform means the DOM text may be uppercased). */
