@@ -182,7 +182,7 @@ const PlusMain = (p: PlusContentProps) => {
       data-no-neo
       type="button"
       onClick={item.onClick}
-      className="plus-row w-full flex items-center gap-3 px-2 py-2 rounded-[12px] text-left border-0 bg-transparent"
+      className="plus-row w-full flex items-center gap-3 px-2 py-2 rounded-[12px] text-start border-0 bg-transparent"
     >
       <span
         className="shrink-0 grid place-items-center rounded-[10px] transition-colors duration-200"
@@ -248,7 +248,7 @@ const PlusMain = (p: PlusContentProps) => {
               key={opt.id}
               type="button"
               onClick={() => setSearchMode(opt.id)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-left hover:bg-foreground/[0.06] transition-colors"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-start hover:bg-foreground/[0.06] transition-colors"
             >
               <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                 <span className="text-[13px] font-medium text-foreground leading-none">{opt.label}</span>
@@ -358,7 +358,7 @@ const PlusMain = (p: PlusContentProps) => {
             <button
               key={label}
               onClick={onClick}
-              className="w-full flex items-center gap-3 px-2.5 h-9 rounded-[10px] text-left hover:bg-foreground/[0.06] transition-colors"
+              className="w-full flex items-center gap-3 px-2.5 h-9 rounded-[10px] text-start hover:bg-foreground/[0.06] transition-colors"
             >
               <Icon className="w-[18px] h-[18px] text-foreground/70 shrink-0" strokeWidth={1.8} />
               <span className="flex-1 text-[13.5px] font-medium text-foreground truncate">{label}</span>
@@ -380,7 +380,7 @@ const PlusMain = (p: PlusContentProps) => {
               <button
                 onClick={() => setSearchOpen((v) => !v)}
                 aria-expanded={searchOpen}
-                className="w-full flex items-center gap-3 px-2.5 h-9 rounded-[10px] text-left hover:bg-foreground/[0.06] transition-colors"
+                className="w-full flex items-center gap-3 px-2.5 h-9 rounded-[10px] text-start hover:bg-foreground/[0.06] transition-colors"
               >
                 <Radar
                   className="w-[18px] h-[18px] shrink-0"
@@ -567,7 +567,7 @@ const PlusSkills = (p: PlusContentProps) => (
     <div className="px-3 pb-3 text-[12px] text-brand-muted leading-snug">
       Toggle skills on. The AI picks which to use each turn.
     </div>
-    <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain pb-3 pr-1">
+    <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain pb-3 pe-1">
       {p.mySkills.length === 0 && (
         <button
           onClick={() => {
@@ -583,7 +583,7 @@ const PlusSkills = (p: PlusContentProps) => (
         const enabled = skill.is_enabled !== false;
         return (
           <div key={`mine-${skill.id}`}>
-            {idx > 0 && <div className="h-px bg-foreground/10 ml-3" />}
+            {idx > 0 && <div className="h-px bg-foreground/10 ms-3" />}
             <div
               role="button"
               tabIndex={0}
@@ -644,7 +644,7 @@ const PlusSkills = (p: PlusContentProps) => (
         .filter((l) => !p.mySkills.some((m) => m.name === l.name))
         .map((skill, idx) => (
           <div key={`sys-${skill.id}`}>
-            {idx > 0 && <div className="h-px bg-foreground/10 ml-3" />}
+            {idx > 0 && <div className="h-px bg-foreground/10 ms-3" />}
             <div className="px-3 py-3">
               <div className="flex items-center gap-2">
                 <span className="flex-1 text-[13.5px] font-bold text-brand-parchment/85 leading-tight">
@@ -716,7 +716,7 @@ const PlusMusic = (p: PlusContentProps) => (
               }
               p.setPlusView("main");
             }}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] text-left transition-colors border ${active ? "border-foreground/25 bg-foreground/[0.12]" : "border-foreground/12 bg-foreground/[0.05] active:bg-foreground/[0.08]"}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] text-start transition-colors border ${active ? "border-foreground/25 bg-foreground/[0.12]" : "border-foreground/12 bg-foreground/[0.05] active:bg-foreground/[0.08]"}`}
           >
             <Music2
               className={`w-[18px] h-[18px] ${active ? "text-brand-mint" : "text-brand-mint"}`}
@@ -737,7 +737,7 @@ const PlusMusic = (p: PlusContentProps) => (
         type="button"
         disabled={p.uploadingMusic}
         onClick={() => p.musicFileInputRef.current?.click()}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] border border-dashed border-brand-mint/50 bg-foreground/[0.05] transition-colors text-left disabled:opacity-60"
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] border border-dashed border-brand-mint/50 bg-foreground/[0.05] transition-colors text-start disabled:opacity-60"
       >
         {p.uploadingMusic ? (
           <Loader2 className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-400 animate-spin" />
@@ -769,7 +769,7 @@ const PlusMusic = (p: PlusContentProps) => (
                     p.playUserTrack(track);
                     p.setPlusView("main");
                   }}
-                  className="flex-1 flex items-center gap-3 text-left min-w-0"
+                  className="flex-1 flex items-center gap-3 text-start min-w-0"
                 >
                   <Music2
                     className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-400 shrink-0"
@@ -886,7 +886,7 @@ const PlusSkillsBody = (p: PlusContentProps) => (
         Manage
       </button>
     </div>
-    <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain pb-3 pr-1">
+    <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain pb-3 pe-1">
       {p.mySkills.length === 0 && (
         <button
           onClick={() => {
@@ -902,7 +902,7 @@ const PlusSkillsBody = (p: PlusContentProps) => (
         const enabled = skill.is_enabled !== false;
         return (
           <div key={`mine-${skill.id}`}>
-            {idx > 0 && <div className="h-px bg-foreground/10 ml-3" />}
+            {idx > 0 && <div className="h-px bg-foreground/10 ms-3" />}
             <div
               role="button"
               tabIndex={0}
@@ -1031,7 +1031,7 @@ const PlusIntegrationsBody = (p: PlusContentProps) => {
               {connected && (
                 <span
                   aria-hidden
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                  className="absolute -top-1 -end-1 w-3 h-3 rounded-full"
                   style={{ background: "#34c759", boxShadow: "0 0 0 2px rgba(20,22,26,0.95), 0 0 8px rgba(52,199,89,0.6)" }}
                 />
               )}

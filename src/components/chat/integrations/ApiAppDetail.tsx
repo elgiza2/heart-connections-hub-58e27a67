@@ -252,7 +252,7 @@ export default function ApiAppDetail({
                   );
                   onUse?.();
                 }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors active:bg-foreground/[0.04]"
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-start transition-colors active:bg-foreground/[0.04]"
                 style={{ border: 0, background: "transparent" }}
               >
                 <span className="min-w-0 flex-1">

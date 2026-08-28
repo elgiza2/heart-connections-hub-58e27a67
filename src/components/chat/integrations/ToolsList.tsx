@@ -60,7 +60,7 @@ export default function ToolsList({
             key={tool.key}
             type="button"
             onClick={() => onPick(tool)}
-            className="block w-full px-2 py-2.5 text-left active:opacity-60"
+            className="block w-full px-2 py-2.5 text-start active:opacity-60"
             style={{ border: 0, background: "transparent" }}
           >
             <span className="block truncate text-[13.5px] text-foreground/85">{tool.name}</span>

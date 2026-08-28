@@ -111,7 +111,7 @@ export default function IntegrationDetail({ item, connected, busy, onBack, onTog
             <MoreHorizontal className="h-[19px] w-[19px]" />
           </button>
           {menuOpen && (
-            <div className="absolute left-0 top-10 z-20 w-52 overflow-hidden rounded-[18px] bg-card p-1.5 shadow-2xl ring-1 ring-foreground/[0.06]">
+            <div className="absolute start-0 top-10 z-20 w-52 overflow-hidden rounded-[18px] bg-card p-1.5 shadow-2xl ring-1 ring-foreground/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -318,7 +318,7 @@ function ResourceRow({
       type="button"
       disabled={!href}
       onClick={() => href && window.open(href, "_blank", "noopener")}
-      className="flex w-full items-center gap-3 bg-transparent px-4 py-3.5 text-left transition-opacity active:opacity-60 disabled:opacity-30"
+      className="flex w-full items-center gap-3 bg-transparent px-4 py-3.5 text-start transition-opacity active:opacity-60 disabled:opacity-30"
       style={{
         border: 0,
         ...(last ? {} : { boxShadow: "inset 0 -1px 0 hsl(var(--foreground) / 0.05)" }),

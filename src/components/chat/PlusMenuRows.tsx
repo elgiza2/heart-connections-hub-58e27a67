@@ -25,7 +25,7 @@ export const SectionCard = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-export const SheetDivider = () => <div className="h-px bg-foreground/10 ml-12" />;
+export const SheetDivider = () => <div className="h-px bg-foreground/10 ms-12" />;
 
 interface SheetRowProps {
   Icon?: LucideIcon;
@@ -59,7 +59,7 @@ export const SheetRow = ({
     whileTap={{ scale: 0.985 }}
     transition={iosSpring}
     onClick={onClick}
-    className="w-full flex items-center gap-3 px-3 py-3 text-left transition-colors active:bg-foreground/[0.06]"
+    className="w-full flex items-center gap-3 px-3 py-3 text-start transition-colors active:bg-foreground/[0.06]"
   >
     <span
       className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-foreground/15"
@@ -88,7 +88,7 @@ export const SheetRow = ({
           </span>
         )}
         {active && (
-          <span className="w-2 h-2 rounded-full bg-brand-mint ml-0.5" />
+          <span className="w-2 h-2 rounded-full bg-brand-mint ms-0.5" />
         )}
       </div>
       {desc && (
@@ -116,7 +116,7 @@ interface DesktopRowProps {
 export const DesktopRow = ({ Icon, label, onClick, chevron, color }: DesktopRowProps) => (
   <button
     onClick={onClick}
-    className="w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left hover:bg-surface-3 active:translate-x-[2px] active:translate-y-[2px] transition-all">
+    className="w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-start hover:bg-surface-3 active:translate-x-[2px] active:translate-y-[2px] transition-all">
     <Icon
       className="w-[18px] h-[18px] shrink-0"
       strokeWidth={2.2}
