@@ -1,4 +1,8 @@
 import { EGYPTIAN_DICT } from "./egyptianDict";
+import { EGYPTIAN_EXTRA } from "./egyptianExtra";
+
+const DICT: Record<string, string> = { ...EGYPTIAN_DICT, ...EGYPTIAN_EXTRA };
+
 
 /**
  * Zero-network Egyptian Arabic DOM pass.
