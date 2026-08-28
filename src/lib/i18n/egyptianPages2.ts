@@ -369,4 +369,5 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "Designs personalized study plans, generates spaced-repetition flashcards, and uses Socratic questioning to deepen understanding of any subject. Trigger when studying or learning something new.": "بيعملك خطط مذاكرة مخصصة وكروت مراجعة بالتكرار المتباعد وبيستخدم أسئلة سقراطية عشان تفهم أي مادة بعمق. استخدمه وإنت بتذاكر أو بتتعلم حاجة جديدة.",
   "starter": "مبتدئ",
   "elite": "إيليت",
+  "Designs personalized study plans, generates spaced-repetition flashcards, and uses Socratic questioning to deepen understanding of any subject. Trigger when learning something new.": "بيعملك خطط مذاكرة مخصصة وكروت مراجعة بالتكرار المتباعد وبيستخدم أسئلة سقراطية عشان تفهم أي مادة بعمق. استخدمه وإنت بتذاكر أو بتتعلم حاجة جديدة.",
 };
