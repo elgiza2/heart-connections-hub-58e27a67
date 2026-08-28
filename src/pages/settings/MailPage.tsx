@@ -334,29 +334,34 @@ function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () =
 /** HTML bodies render inside a sandboxed iframe so remote markup can never touch the app. */
 function HtmlBody({ html }: { html: string }) {
   const [height, setHeight] = useState(240);
+  const frameId = useMemo(() => `mail-${Math.random().toString(36).slice(2)}`, []);
+
+  // Remote scripts are stripped; the frame is origin-less and only reports its height.
+  const safe = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/ on[a-z]+=("[^"]*"|'[^']*')/gi, "");
   const doc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>
     body{margin:0;padding:0;font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:#111;background:#fff;word-break:break-word}
     img{max-width:100%;height:auto}table{max-width:100%}
-  </style></head><body>${html}</body></html>`;
+  </style></head><body>${safe}<script>
+    (function(){var s=function(){parent.postMessage({t:"mail-h",id:${JSON.stringify(frameId)},h:document.documentElement.scrollHeight},"*")};
+    s();window.addEventListener("load",s);[100,500,1200,2500].forEach(function(d){setTimeout(s,d)});
+    if(window.ResizeObserver)new ResizeObserver(s).observe(document.body);})();
+  <\/script></body></html>`;
+
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data as { t?: string; id?: string; h?: number } | null;
+      if (!d || d.t !== "mail-h" || d.id !== frameId || !d.h) return;
+      setHeight(Math.min(Math.max(d.h + 16, 120), 4000));
+    };
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, [frameId]);
+
   return (
     <iframe
       title="message"
-      sandbox="allow-popups allow-popups-to-escape-sandbox"
+      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
       srcDoc={doc}
-      onLoad={(e) => {
-        const frame = e.currentTarget as HTMLIFrameElement;
-        const measure = () => {
-          try {
-            const h = frame.contentDocument?.body?.scrollHeight;
-            if (h) setHeight(Math.min(h + 24, 3000));
-          } catch {
-            /* cross-origin */
-          }
-        };
-        measure();
-        // Remote images land after load — re-measure a few times.
-        [150, 600, 1500].forEach((d) => window.setTimeout(measure, d));
-      }}
       style={{ height }}
       className="mt-4 w-full rounded-2xl border border-foreground/10 bg-white"
     />
