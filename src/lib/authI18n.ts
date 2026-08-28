@@ -348,14 +348,9 @@ export function t(key: string, lang?: AuthLang): string {
   const L = lang || getUserLang();
   const entry = (DICT as Record<string, Entry>)[key] || UI_DICT[key];
   if (!entry) return String(key);
-  // ar-eg → fall back to ar, then en.
-  if (L === "ar-eg") return entry["ar-eg"] || entry.ar || entry.en;
-  if (entry[L]) return entry[L]!;
-  ensureExactDict(L);
-  const exact = EXACT_TEXT_TRANSLATIONS?.[entry.en];
-  if (exact?.[L]) return exact[L]!;
-  return entry.en;
+  return entry[L] || entry.en;
 }
+
 
 /** Translate + interpolate `{name}` placeholders. */
 export function tf(
