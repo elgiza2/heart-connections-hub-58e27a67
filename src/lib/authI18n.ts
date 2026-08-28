@@ -1,10 +1,9 @@
 /**
- * Localized strings for auth + shared UI chrome.
- * - Persists the user's language in localStorage ("app_lang") and, when
- *   signed in, in user_chat_settings.preferred_language.
- * - Detects the visitor's language once on first load (nav.language + timezone)
- *   and stores that choice so it stays stable across visits.
- * - Falls back cleanly: ar-eg → ar → en for any missing key.
+ * Localized strings for the whole UI — English + Egyptian colloquial Arabic.
+ *
+ * Everything lives in this file (no i18n library, no remote dictionaries, no
+ * DOM translation pass), so switching languages costs zero network requests
+ * and zero runtime lag.
  *
  * Usage:
  *   import { t, useUserLang, setUserLang, initUserLang } from "@/lib/authI18n";
@@ -15,67 +14,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeErrorMessage } from "@/lib/sanitizeError";
-import { cachedJson } from "@/lib/persistentCache";
 
-export type AuthLang =
-  | "en"
-  | "ar"
-  | "ar-eg"
-  | "es"
-  | "fr"
-  | "de"
-  | "pt"
-  | "it"
-  | "tr"
-  | "ru"
-  | "zh"
-  | "ja"
-  | "ko"
-  | "hi"
-  | "id"
-  | "nl"
-  | "sv"
-  | "cs"
-  | "ro"
-  | "el"
-  | "uk"
-  | "he"
-  | "fa"
-  | "vi"
-  | "th"
-  | "pl";
+export type AuthLang = "en" | "ar-eg";
 
-const SUPPORTED: AuthLang[] = [
-  "en",
-  "ar",
-  "ar-eg",
-  "es",
-  "fr",
-  "de",
-  "pt",
-  "it",
-  "tr",
-  "ru",
-  "zh",
-  "ja",
-  "ko",
-  "hi",
-  "id",
-  "nl",
-  "sv",
-  "cs",
-  "ro",
-  "el",
-  "uk",
-  "he",
-  "fa",
-  "vi",
-  "th",
-  "pl",
-];
-const RTL_LANGS: AuthLang[] = ["ar", "ar-eg", "he", "fa"];
+const SUPPORTED: AuthLang[] = ["en", "ar-eg"];
+const RTL_LANGS: AuthLang[] = ["ar-eg"];
 
 type Entry = Partial<Record<AuthLang, string>> & { en: string };
+
 
 const DICT: Record<string, Entry> = {
   // ── Toast / error messages (existing) ────────────────────────────────
