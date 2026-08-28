@@ -1,5 +1,6 @@
 /** @doc Megsy Mail — clean mailbox: inbox, sent, spam, trash, full reader, compose, reply & AI explain. */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
