@@ -31,11 +31,11 @@ const lookup = (raw: string): string | null => {
   if (!text || text.length > 400) return null;
   // Skip pure numbers / symbols — nothing to translate.
   if (!/[A-Za-z]/.test(text)) return null;
-  const hit = EGYPTIAN_DICT[text];
+  const hit = DICT[text];
   if (hit) return hit;
   // Try without a trailing punctuation mark.
   const stripped = text.replace(/[.:!?]+$/, "");
-  if (stripped !== text && EGYPTIAN_DICT[stripped]) return EGYPTIAN_DICT[stripped];
+  if (stripped !== text && DICT[stripped]) return DICT[stripped];
   return null;
 };
 
