@@ -93,6 +93,7 @@ const ManusSettingsMobile = () => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredTheme());
 
   const mainRows: Row[] = [
+    { icon: MailIcon, label: "Mail", trailing: "@megsyai.com", path: "/settings/mail" },
     { icon: Lightbulb, label: "Knowledge", path: "/settings/memory" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
     { icon: Database, label: "Data controls", path: "/settings/data" },
@@ -124,7 +125,6 @@ const ManusSettingsMobile = () => {
       },
     },
     { icon: Languages, label: "Language", trailing: langLabel, path: "/settings/language" },
-    { icon: MailIcon, label: "Mail", trailing: "@megsyai.com", path: "/settings/mail" },
   ];
 
 
