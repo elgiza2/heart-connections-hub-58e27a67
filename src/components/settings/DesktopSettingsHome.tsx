@@ -1,6 +1,6 @@
 import { useEffect, useState, type FC, type SVGProps } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Sparkles, Globe, Brain, Info } from "lucide-react";
+import { ChevronRight, Sparkles, Globe, Brain, Info, Mail } from "lucide-react";
 import { getStoredTheme, setTheme, type ThemeMode } from "@/lib/theme";
 import { Moon as MoonIcon, Sun as SunIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
