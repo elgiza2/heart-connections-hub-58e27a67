@@ -21,6 +21,7 @@ import {
   Moon,
   Sun,
   Languages,
+  Mail as MailIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/common/ConfirmDialog";
