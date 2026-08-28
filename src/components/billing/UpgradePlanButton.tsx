@@ -89,7 +89,7 @@ export function UpgradePlanButton({ variant = "full", className, hideCredits = f
 
   if (!meta.target || loading) return null;
 
-  const isAr = lang === "ar" || lang === "ar-eg" || lang === "he" || lang === "fa";
+  const isAr = lang === "ar-eg";
   const label = isAr ? meta.labelAr : meta.labelEn;
   const shortLabel = variant === "compact" ? (isAr ? meta.shortAr : meta.shortEn) : label;
 

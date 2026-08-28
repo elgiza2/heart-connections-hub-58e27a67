@@ -73,7 +73,7 @@ export default function MobilePricingScreen({
   onMenuClick,
 }: Props) {
   const lang = useUserLang();
-  const isAr = lang === "ar";
+  const isAr = lang === "ar-eg";
   const isLight = useIsLightTheme();
   const compact = useCompactHeight();
   const isLoading = loadingTier === "pro";

@@ -45,8 +45,8 @@ const useAppChrome = () => {
     const apply = () => applyTheme();
 
     apply();
-    html.setAttribute("dir", "ltr");
-    html.setAttribute("lang", "en");
+    // Language/direction is owned by authI18n (English + Egyptian Arabic).
+
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     window.addEventListener("popstate", apply);

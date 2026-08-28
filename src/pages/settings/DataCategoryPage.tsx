@@ -256,7 +256,7 @@ export default function DataCategoryPage() {
   const { category = "" } = useParams();
   const navigate = useNavigate();
   const lang = useUserLang();
-  const isAr = lang === "ar" || lang === "ar-eg" || lang === "he" || lang === "fa";
+  const isAr = lang === "ar-eg";
   const cfg = CONFIGS[category];
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { LOCALES, type LocaleCode, getLocale } from "@/lib/landing/i18n/locales";
-import { translateExactText, type AuthLang } from "@/lib/authI18n";
+import { translateExactText, getUserLang, type AuthLang } from "@/lib/authI18n";
 
 interface SEOHeadProps {
   title: string;
@@ -38,18 +38,14 @@ const SEOHead = ({
   const canonical = `${SITE_URL}${path || "/"}`;
   const ogImage = image || DEFAULT_IMAGE;
   // If SEOHead has an explicit locale (localized landing routes), use it.
-  // Otherwise DEFER to the visitor's chosen/auto-detected language stored in
-  // localStorage — never hardcode "en" here, that fights TranslationWrapper
-  // and breaks the first-party translator + RTL on internal pages.
-  const RTL = new Set(["ar", "ar-eg", "fa", "he", "ps", "ur"]);
-  const savedLang =
-    typeof window !== "undefined" ? window.localStorage.getItem("language") || "" : "";
-  const htmlLang =
-    meta?.hreflang ?? (savedLang || "en");
-  const htmlDir =
-    meta?.dir ?? (RTL.has(savedLang) ? "rtl" : "ltr");
-  const ogLocale = meta?.ogLocale ?? "en_US";
+  // Otherwise defer to the visitor's chosen language (English or Egyptian
+  // Arabic) so <html lang/dir> stays in sync with the in-app dictionary.
+  const savedLang = getUserLang();
+  const htmlLang = meta?.hreflang ?? (savedLang === "ar-eg" ? "ar-EG" : "en");
+  const htmlDir = meta?.dir ?? (savedLang === "ar-eg" ? "rtl" : "ltr");
+  const ogLocale = meta?.ogLocale ?? (savedLang === "ar-eg" ? "ar_EG" : "en_US");
   const effectiveLang = (meta?.code ?? savedLang) as AuthLang | undefined;
+
   const localizedTitle = effectiveLang ? translateExactText(title, effectiveLang) : title;
   const localizedDescription = effectiveLang ? translateExactText(description, effectiveLang) : description;
   const localizedFullTitle = isHomePath ? localizedTitle : `${localizedTitle} | ${brandName}`;
