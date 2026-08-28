@@ -14,6 +14,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeErrorMessage } from "@/lib/sanitizeError";
+import { EGYPTIAN_DICT } from "@/lib/i18n/egyptianDict";
+import { EGYPTIAN_EXTRA } from "@/lib/i18n/egyptianExtra";
+
 
 export type AuthLang = "en" | "ar-eg";
 
@@ -418,6 +421,8 @@ export function translateExactText(text: string, lang?: AuthLang): string {
   if (!normalized) return text;
   const entry = BY_ENGLISH.get(normalized);
   if (entry) return entry[L] || entry.en;
-  return text;
+  // Fall back to the bundled Egyptian dictionaries (same data the DOM pass uses).
+  return EGYPTIAN_EXTRA[normalized] || EGYPTIAN_DICT[normalized] || text;
 }
+
 

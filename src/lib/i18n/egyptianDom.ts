@@ -1,4 +1,8 @@
 import { EGYPTIAN_DICT } from "./egyptianDict";
+import { EGYPTIAN_EXTRA } from "./egyptianExtra";
+
+const DICT: Record<string, string> = { ...EGYPTIAN_DICT, ...EGYPTIAN_EXTRA };
+
 
 /**
  * Zero-network Egyptian Arabic DOM pass.
@@ -27,18 +31,20 @@ const lookup = (raw: string): string | null => {
   if (!text || text.length > 400) return null;
   // Skip pure numbers / symbols — nothing to translate.
   if (!/[A-Za-z]/.test(text)) return null;
-  const hit = EGYPTIAN_DICT[text];
+  const hit = DICT[text];
   if (hit) return hit;
   // Try without a trailing punctuation mark.
   const stripped = text.replace(/[.:!?]+$/, "");
-  if (stripped !== text && EGYPTIAN_DICT[stripped]) return EGYPTIAN_DICT[stripped];
+  if (stripped !== text && DICT[stripped]) return DICT[stripped];
   return null;
 };
 
 const translateNode = (node: Text) => {
   const parent = node.parentElement;
   if (!parent || SKIP_TAGS.has(parent.tagName)) return;
-  if (parent.closest("[data-no-translate], [translate='no']")) return;
+  // NOTE: <html translate="no"> is set globally, so only element-level opt-outs count.
+  const optOut = parent.closest("[data-no-translate], [translate='no']");
+  if (optOut && optOut !== document.documentElement) return;
   const original = node.nodeValue || "";
   const hit = lookup(original);
   if (!hit) return;
