@@ -39,6 +39,7 @@ import {
   SecuritySettingsPage,
   SecurityPage,
   LanguagePage,
+  MailPage,
   NotificationsPage,
   NotificationsInboxPage,
   UsagePage,
