@@ -12,6 +12,7 @@ import {
   Loader2,
   Mail,
   RefreshCw,
+  Search as SearchIcon,
   Send,
   ShieldAlert,
   Sparkles,
@@ -58,6 +59,22 @@ function initials(addr: string) {
   return (name.trim()[0] || "?").toUpperCase();
 }
 
+const TONES = [
+  "bg-primary/15 text-primary",
+  "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+  "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  "bg-violet-500/15 text-violet-600 dark:text-violet-400",
+  "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+];
+
+/** Stable per-sender avatar tint so the list reads like a real mail client. */
+function avatarTone(addr: string) {
+  let h = 0;
+  for (const ch of addr || "?") h = (h * 31 + ch.charCodeAt(0)) % 997;
+  return TONES[h % TONES.length];
+}
+
 function fmtDate(iso: string) {
   const d = new Date(iso);
   const today = new Date();
@@ -79,6 +96,7 @@ export default function MailPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<MailMessage | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -318,6 +336,7 @@ export default function MailPage() {
   const Body = (
     <section className="pb-10">
       {Header}
+      {Search}
       {Tabs}
       {List}
       {open && (
