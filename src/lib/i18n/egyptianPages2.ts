@@ -486,4 +486,9 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "Megsy's summary": "ملخص Megsy",
   "No explanation available": "مفيش شرح متاح",
   "Forwarded message": "رسالة محوّلة",
+  "Unread": "مش مقروء",
+  "Messages": "رسايل",
+  "From Megsy": "من Megsy",
+  "Search email": "دوّر في البريد",
+  "Clear": "مسح",
 };
