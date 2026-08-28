@@ -312,7 +312,9 @@ export default function MailPage() {
 }
 
 function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
+  // Rendered in a portal: settings pages apply global CSS that collapses
+  // icon-bearing controls, and the overlay must escape that scope.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-black/50 backdrop-blur-sm p-0 sm:p-6"
       onClick={onClose}
@@ -323,7 +325,8 @@ function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () =
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
