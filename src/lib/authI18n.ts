@@ -225,24 +225,37 @@ export function readStoredLang(): AuthLang | null {
   return null;
 }
 
-/** Default language is English — auto-detection disabled. */
+/** Guess the language from the browser: Arabic speakers → Egyptian Arabic. */
 export function detectLang(): AuthLang {
+  if (typeof navigator === "undefined") return "en";
+  try {
+    const tags = [navigator.language || "", ...(navigator.languages || [])].map((s) =>
+      s.toLowerCase(),
+    );
+    if (tags.some((tag) => tag.startsWith("ar"))) return "ar-eg";
+  } catch {
+    // ignore
+  }
   return "en";
 }
 
+let currentLang: AuthLang | null = null;
 
 /** Current effective language: stored → detected → 'en'. */
 export function getUserLang(): AuthLang {
-  // Product decision: the whole app is English-only.
-  return "en";
+  if (currentLang) return currentLang;
+  currentLang = readStoredLang() ?? "en";
+  return currentLang;
 }
 
-function applyHtmlLang(_lang: AuthLang) {
+function applyHtmlLang(lang: AuthLang) {
+  currentLang = lang;
   if (typeof document === "undefined") return;
-  // English-only app: always LTR.
-  document.documentElement.setAttribute("lang", "en");
-  document.documentElement.setAttribute("dir", "ltr");
+  const rtl = RTL_LANGS.includes(lang);
+  document.documentElement.setAttribute("lang", lang === "ar-eg" ? "ar" : "en");
+  document.documentElement.setAttribute("dir", rtl ? "rtl" : "ltr");
 }
+
 
 
 function persistLangLocally(lang: AuthLang) {
