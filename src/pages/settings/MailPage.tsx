@@ -10,6 +10,7 @@ import {
   CornerUpLeft,
   Forward,
   Loader2,
+  Mail,
   PenLine,
   RefreshCw,
   Search as SearchIcon,
