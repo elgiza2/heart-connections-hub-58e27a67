@@ -10,6 +10,13 @@ import { RatingBadge } from "@/components/foundations/rating-badge";
 import ServicesStage from "./ServicesStage";
 import AgentStoryStage from "./AgentStoryStage";
 import { getPlan, PLAN_MONTHLY_CREDITS } from "@/data/pricingData";
+import RegionStage from "./RegionStage";
+import {
+  getPayRegionOrGuess,
+  setPayRegion,
+  type PayRegion,
+} from "@/lib/payRegion";
+import { setUserLang } from "@/lib/authI18n";
 import {
   MODEL_ROWS,
   type OnboardingModel,
@@ -994,7 +1001,23 @@ const CTA_LABELS = [
 export default function FeatureShowcase({ onFinish }: { onFinish?: () => void }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState<"next" | "prev">("next");
-  const last = index >= PAGES.length - 1;
+  // First panel = region choice (language + billing gateway). Selecting a card
+  // persists the choice immediately so later panels and /auth follow it.
+  const [region, setRegion] = useState<PayRegion>(() => getPayRegionOrGuess());
+  const pickRegion = (r: PayRegion) => {
+    setRegion(r);
+    setPayRegion(r);
+    void setUserLang(r === "arab" ? "ar" : "en", { syncRemote: false });
+  };
+  const pages = [
+    <Page key="region">
+      <Title heading="Choose your experience" kicker="اختر تجربتك" />
+      <RegionStage value={region} onChange={pickRegion} />
+    </Page>,
+    ...PAGES,
+  ];
+  const ctaLabels = [region === "arab" ? "ابدأ الآن" : "Continue", ...CTA_LABELS];
+  const last = index >= pages.length - 1;
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -1018,7 +1041,7 @@ export default function FeatureShowcase({ onFinish }: { onFinish?: () => void })
 
   const goTo = (target: number) => {
     setIndex((i) => {
-      const clamped = Math.max(0, Math.min(PAGES.length - 1, target));
+      const clamped = Math.max(0, Math.min(pages.length - 1, target));
       if (clamped === i) return i;
       setDir(clamped > i ? "next" : "prev");
       return clamped;
@@ -1161,7 +1184,7 @@ export default function FeatureShowcase({ onFinish }: { onFinish?: () => void })
           className={dir === "next" ? "fs-slide-next" : "fs-slide-prev"}
           style={{ position: "relative", height: "100%" }}
         >
-          {PAGES[index]}
+          {pages[index]}
         </div>
       </div>
 
@@ -1181,7 +1204,7 @@ export default function FeatureShowcase({ onFinish }: { onFinish?: () => void })
           zIndex: 30,
         }}
       >
-        {PAGES.map((_, i) => (
+        {pages.map((_, i) => (
           <button
             key={i}
             type="button"
@@ -1255,7 +1278,7 @@ export default function FeatureShowcase({ onFinish }: { onFinish?: () => void })
             />
           )}
           <span key={`label-${index}`} className="fs-label">
-            {CTA_LABELS[index] || "Continue"}
+            {ctaLabels[index] || "Continue"}
           </span>
         </button>
 

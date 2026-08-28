@@ -31,3 +31,28 @@ export function setPayRegion(region: PayRegion): void {
 export function isArabBilling(): boolean {
   return getPayRegion() === "arab";
 }
+
+/**
+ * Best guess for a first-time visitor: Arabic browser language or an Arab
+ * timezone → the Arabic (Kashier) edition, everyone else → global (Dodo).
+ */
+export function guessPayRegion(): PayRegion {
+  if (typeof window === "undefined") return "global";
+  try {
+    const lang = (navigator.language || "").toLowerCase();
+    if (lang.startsWith("ar")) return "arab";
+    const langs = (navigator.languages || []).map((l) => l.toLowerCase());
+    if (langs.some((l) => l.startsWith("ar"))) return "arab";
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (/^(Africa\/(Cairo|Algiers|Tunis|Tripoli|Khartoum|Casablanca)|Asia\/(Riyadh|Dubai|Kuwait|Qatar|Bahrain|Muscat|Baghdad|Amman|Beirut|Damascus|Aden|Gaza|Hebron))$/.test(tz))
+      return "arab";
+  } catch {
+    // ignore
+  }
+  return "global";
+}
+
+/** Stored choice, or the automatic guess when the visitor never picked one. */
+export function getPayRegionOrGuess(): PayRegion {
+  return getPayRegion() ?? guessPayRegion();
+}
