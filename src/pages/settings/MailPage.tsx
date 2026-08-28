@@ -173,14 +173,20 @@ export default function MailPage() {
     <button
       type="button"
       onClick={copyAddress}
-      className="group flex w-full items-center gap-2 text-start"
+      className="group flex w-full items-center gap-3 rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] px-4 py-3 text-start transition-colors hover:border-foreground/15 hover:bg-foreground/[0.05]"
       aria-label={tx("Copy address")}
     >
-      <span className="min-w-0 truncate text-[13px] text-foreground/55" dir="ltr">
-        {box?.address ?? "…"}
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+        <Mail className="h-4 w-4" />
       </span>
-      <span className="shrink-0 text-foreground/35 transition-colors group-hover:text-foreground/70">
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-medium text-foreground/40">{tx("Your Megsy address")}</span>
+        <span className="block truncate text-[13.5px] font-medium" dir="ltr">
+          {box?.address ?? "…"}
+        </span>
+      </span>
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-foreground/40 transition-colors group-hover:bg-foreground/[0.06] group-hover:text-foreground/80">
+        {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
       </span>
     </button>
   );
