@@ -79,6 +79,13 @@ const patterns: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
   [/^App Version (.+) • Build (.+)$/, (m) => `إصدار التطبيق ${m[1]} • بيلد ${m[2]}`],
 ];
 
+/** Case-insensitive index (CSS text-transform means the DOM text may be uppercased). */
+const LOWER: Record<string, string> = {};
+for (const k of Object.keys(DICT)) {
+  const lk = k.toLowerCase();
+  if (!(lk in LOWER)) LOWER[lk] = DICT[k];
+}
+
 const lookup = (raw: string): string | null => {
   const text = raw.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
   if (!text || text.length > 700) return null;
@@ -89,6 +96,8 @@ const lookup = (raw: string): string | null => {
   // Try without a trailing punctuation mark.
   const stripped = text.replace(/[.:!?]+$/, "");
   if (stripped !== text && DICT[stripped]) return DICT[stripped];
+  const lower = LOWER[text.toLowerCase()] || LOWER[stripped.toLowerCase()];
+  if (lower) return lower;
   for (const [re, build] of patterns) {
     const m = text.match(re);
     if (m) return build(m);
