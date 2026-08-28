@@ -10,6 +10,7 @@ import {
   CornerUpLeft,
   Forward,
   Loader2,
+  Mail,
   PenLine,
   RefreshCw,
   Search as SearchIcon,
@@ -173,14 +174,22 @@ export default function MailPage() {
     <button
       type="button"
       onClick={copyAddress}
-      className="group flex w-full items-center gap-2 text-start"
+      className="group flex w-full items-center gap-3 rounded-2xl border border-foreground/[0.08] bg-foreground/[0.03] px-4 py-3 text-start transition-colors hover:border-foreground/15 hover:bg-foreground/[0.05]"
       aria-label={tx("Copy address")}
     >
-      <span className="min-w-0 truncate text-[13px] text-foreground/55" dir="ltr">
-        {box?.address ?? "…"}
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+        <span className="contents">
+          <Mail className="h-4 w-4" />
+        </span>
       </span>
-      <span className="shrink-0 text-foreground/35 transition-colors group-hover:text-foreground/70">
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-medium text-foreground/40">{tx("Your Megsy address")}</span>
+        <span className="block truncate text-[13.5px] font-medium" dir="ltr">
+          {box?.address ?? "…"}
+        </span>
+      </span>
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-foreground/40 transition-colors group-hover:bg-foreground/[0.06] group-hover:text-foreground/80">
+        {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
       </span>
     </button>
   );
@@ -360,16 +369,35 @@ export default function MailPage() {
   return (
     <DesktopSettingsLayout>
       <div className="mx-auto w-full max-w-2xl px-4 md:px-0">
-        <header className="mb-5 flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label={tx("Back")} onClick={() => navigate("/settings")}>
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-          </Button>
-          <h1 className="flex-1 text-[26px] font-semibold tracking-tight">{tx("Mail")}</h1>
+        <header className="mb-6 flex items-center gap-3">
+          <BackButton label={tx("Back")} onClick={() => navigate("/settings")} />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[24px] font-semibold leading-tight tracking-tight">{tx("Mail")}</h1>
+            <p className="truncate text-[12.5px] text-foreground/45" dir="ltr">
+              {box?.address ?? "…"}
+            </p>
+          </div>
           {RefreshBtn}
         </header>
         {Body}
       </div>
     </DesktopSettingsLayout>
+  );
+}
+
+/** Unified, clearly visible back button used across the mail experience. */
+function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-foreground/10 bg-foreground/[0.04] text-foreground/70 shadow-sm transition-all hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground active:scale-95"
+    >
+      <span className="contents">
+        <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+      </span>
+    </button>
   );
 }
 
@@ -470,18 +498,14 @@ function MessageView({
   return (
     <Sheet onClose={onClose}>
       {/* Sticky toolbar */}
-      <div className="flex items-center gap-1 border-b border-foreground/[0.08] px-3 py-2">
-        <button
-          type="button"
-          aria-label={tx("Close")}
-          onClick={onClose}
-          className="grid h-9 w-9 place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/[0.06]"
-        >
-          <span className="contents">
-            <X className="h-4 w-4" />
-          </span>
-        </button>
-        <div className="flex-1" />
+      <div className="flex items-center gap-2.5 border-b border-foreground/[0.08] bg-background/95 px-4 py-3 backdrop-blur">
+        <BackButton label={tx("Back")} onClick={onClose} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-medium text-foreground/80">{tx(FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox")}</p>
+          <p className="truncate text-[11px] text-foreground/40" dir="ltr">
+            {who}
+          </p>
+        </div>
         {folder !== "spam" ? (
           <button
             type="button"
