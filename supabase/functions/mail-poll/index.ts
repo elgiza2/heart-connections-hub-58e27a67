@@ -50,7 +50,13 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("Authorization") || "";
   const okSecret = secret && req.headers.get("x-mail-secret") === secret;
   const okService = auth.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "\u0000");
-  if (!okSecret && !okService) return json({ error: "unauthorized" }, 401);
+  let okUser = false;
+  if (!okSecret && !okService && auth.startsWith("Bearer ")) {
+    const { data } = await admin.auth.getUser(auth.replace("Bearer ", ""));
+    okUser = Boolean(data?.user);
+  }
+  if (!okSecret && !okService && !okUser) return json({ error: "unauthorized" }, 401);
+
 
   const host = Deno.env.get("IMAP_HOST");
   const user = Deno.env.get("IMAP_USER");
