@@ -487,18 +487,14 @@ function MessageView({
   return (
     <Sheet onClose={onClose}>
       {/* Sticky toolbar */}
-      <div className="flex items-center gap-1 border-b border-foreground/[0.08] px-3 py-2">
-        <button
-          type="button"
-          aria-label={tx("Close")}
-          onClick={onClose}
-          className="grid h-9 w-9 place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/[0.06]"
-        >
-          <span className="contents">
-            <X className="h-4 w-4" />
-          </span>
-        </button>
-        <div className="flex-1" />
+      <div className="flex items-center gap-2.5 border-b border-foreground/[0.08] bg-background/95 px-4 py-3 backdrop-blur">
+        <BackButton label={tx("Back")} onClick={onClose} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-medium text-foreground/80">{tx(FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox")}</p>
+          <p className="truncate text-[11px] text-foreground/40" dir="ltr">
+            {who}
+          </p>
+        </div>
         {folder !== "spam" ? (
           <button
             type="button"
