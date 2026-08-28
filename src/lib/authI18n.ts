@@ -396,100 +396,28 @@ export function translateAuthError(
 
 export const AVAILABLE_LANGS: { code: AuthLang; label: string; native: string }[] = [
   { code: "en", label: "English", native: "English" },
-  { code: "ar", label: "Arabic", native: "العربية" },
   { code: "ar-eg", label: "Egyptian Arabic", native: "المصري" },
-  { code: "es", label: "Spanish", native: "Español" },
-  { code: "fr", label: "French", native: "Français" },
-  { code: "de", label: "German", native: "Deutsch" },
-  { code: "pt", label: "Portuguese", native: "Português" },
-  { code: "it", label: "Italian", native: "Italiano" },
-  { code: "tr", label: "Turkish", native: "Türkçe" },
-  { code: "ru", label: "Russian", native: "Русский" },
-  { code: "zh", label: "Chinese", native: "中文" },
-  { code: "ja", label: "Japanese", native: "日本語" },
-  { code: "ko", label: "Korean", native: "한국어" },
-  { code: "hi", label: "Hindi", native: "हिन्दी" },
-  { code: "id", label: "Indonesian", native: "Bahasa Indonesia" },
-  { code: "nl", label: "Dutch", native: "Nederlands" },
-  { code: "sv", label: "Swedish", native: "Svenska" },
-  { code: "cs", label: "Czech", native: "Čeština" },
-  { code: "ro", label: "Romanian", native: "Română" },
-  { code: "el", label: "Greek", native: "Ελληνικά" },
-  { code: "uk", label: "Ukrainian", native: "Українська" },
-  { code: "fa", label: "Persian", native: "فارسی" },
-  { code: "vi", label: "Vietnamese", native: "Tiếng Việt" },
-  { code: "th", label: "Thai", native: "ไทย" },
-  { code: "pl", label: "Polish", native: "Polski" },
 ];
 
-// ─── Lazy-fetched exact-text dictionary ────────────────────────────────────
-// The full dictionary is ~1 MB. It lives as a static asset
-// (public/i18n/exact-text.json) and is fetched the first time a non-English
-// user needs it, so it never enters the JS bundle or the build's memory.
-// English users never trigger the fetch. Until it resolves, translation
-// functions return the original English text — no user-visible regression.
-type ExactDict = Record<string, Partial<Record<AuthLang, string>> & { en: string }>;
-let EXACT_TEXT_TRANSLATIONS: ExactDict | null = null;
-let GREETING_PREFIXES: readonly string[] = [];
-let exactDictLoading: Promise<void> | null = null;
-
-function ensureExactDict(lang: AuthLang): void {
-  if (EXACT_TEXT_TRANSLATIONS || exactDictLoading) return;
-  if (lang === "en") return; // English callers never need the dict
-  if (typeof fetch !== "function") return;
-  // First use downloads it once; later sessions read it from the local
-  // runtime cache (Cache Storage, since it exceeds the localStorage budget).
-  exactDictLoading = cachedJson<{ greetingPrefixes?: string[]; translations?: ExactDict }>(
-    "/i18n/exact-text.json",
-    { key: "i18n:exact-text" },
-  )
-    .then((data) => {
-      EXACT_TEXT_TRANSLATIONS = data.translations ?? {};
-      GREETING_PREFIXES = data.greetingPrefixes ?? [];
-      // Wake any React subscribers so text re-renders in the target language.
-      const current = getUserLang();
-      listeners.forEach((l) => l(current));
-    })
-    .catch(() => {
-      // Leave EXACT_TEXT_TRANSLATIONS null; callers fall through to English.
-      exactDictLoading = null;
-    });
-}
-
-
+/**
+ * Translate a literal English string by looking it up in the in-file
+ * dictionaries. Pure memory lookup — no network, no DOM walking.
+ */
+const BY_ENGLISH: Map<string, Entry> = (() => {
+  const m = new Map<string, Entry>();
+  for (const entry of [...Object.values(UI_DICT), ...Object.values(DICT)]) {
+    if (!m.has(entry.en)) m.set(entry.en, entry);
+  }
+  return m;
+})();
 
 export function translateExactText(text: string, lang?: AuthLang): string {
+  const L = lang || getUserLang();
+  if (L === "en") return text;
   const normalized = text.replace(/\s+/g, " ").trim();
   if (!normalized) return text;
-  const exact = Object.entries(UI_DICT).find(([, entry]) => entry.en === normalized);
-  if (exact) return t(exact[0], lang);
-  const L = lang || getUserLang();
-  ensureExactDict(L);
-  const dict = EXACT_TEXT_TRANSLATIONS;
-  if (!dict) return text; // chunk not loaded yet — fall back to input (English)
-  const lookup = (key: string): string | null => {
-    const e = dict[key];
-    if (!e) return null;
-    if (L === "ar-eg") return e["ar-eg"] || e.ar || e.en;
-    return e[L] || e.en;
-  };
-  // Try exact, then uppercase, then title case (for CSS text-transform sources).
-  let hit = lookup(normalized);
-  if (!hit) hit = lookup(normalized.toUpperCase());
-  if (!hit) {
-    const title = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
-    hit = lookup(title);
-  }
-  if (hit) return hit;
-  // Dynamic greeting: "<prefix>, <name>"
-  const gm = normalized.match(/^([^,]+),\s+(.+)$/);
-  if (gm && GREETING_PREFIXES.includes(gm[1])) {
-    const head = dict[gm[1]];
-    if (head) {
-      const prefix = (L === "ar-eg" ? head["ar-eg"] || head.ar : head[L]) || gm[1];
-      const sep = /^(ar|he|fa|ur)/.test(L) ? "، " : ", ";
-      return `${prefix}${sep}${gm[2]}`;
-    }
-  }
+  const entry = BY_ENGLISH.get(normalized);
+  if (entry) return entry[L] || entry.en;
   return text;
 }
+
