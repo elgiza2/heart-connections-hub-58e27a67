@@ -10,6 +10,8 @@
  *                      MAIL_INBOUND_SECRET header.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendSmtp, smtpConfigured } from "../_shared/smtp.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
