@@ -254,31 +254,6 @@ export default function MobileAuthExtras(p: Props) {
                 </div>
               )}
 
-              {p.screen === "set-password" && p.setRegion && (
-                <div className="pt-1">
-                  <p className="text-[12.5px] text-foreground/55 mb-2 px-1">
-                    {authT("regionQuestion")}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["arab", "global"] as const).map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => p.setRegion?.(r)}
-                        className={`rounded-2xl h-[52px] text-[14px] font-medium transition-colors ${
-                          p.region === r
-                            ? "bg-foreground text-background"
-                            : "text-foreground/80"
-                        }`}
-                        style={p.region === r ? undefined : fieldStyle}
-                      >
-                        {r === "arab" ? authT("regionArab") : authT("regionGlobal")}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {p.screen === "forgot-password" && (
                 <div
                   className="rounded-2xl px-4 h-[52px] flex items-center"
