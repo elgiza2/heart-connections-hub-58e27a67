@@ -16,6 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { sanitizeErrorMessage } from "@/lib/sanitizeError";
 import { EGYPTIAN_DICT } from "@/lib/i18n/egyptianDict";
 import { EGYPTIAN_EXTRA } from "@/lib/i18n/egyptianExtra";
+import { EGYPTIAN_PAGES } from "@/lib/i18n/egyptianPages";
+import { EGYPTIAN_PAGES_2 } from "@/lib/i18n/egyptianPages2";
 
 
 export type AuthLang = "en" | "ar-eg";
@@ -422,7 +424,13 @@ export function translateExactText(text: string, lang?: AuthLang): string {
   const entry = BY_ENGLISH.get(normalized);
   if (entry) return entry[L] || entry.en;
   // Fall back to the bundled Egyptian dictionaries (same data the DOM pass uses).
-  return EGYPTIAN_EXTRA[normalized] || EGYPTIAN_DICT[normalized] || text;
+  return (
+    EGYPTIAN_EXTRA[normalized] ||
+    EGYPTIAN_PAGES[normalized] ||
+    EGYPTIAN_PAGES_2[normalized] ||
+    EGYPTIAN_DICT[normalized] ||
+    text
+  );
 }
 
 

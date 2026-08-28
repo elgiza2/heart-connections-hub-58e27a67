@@ -1,7 +1,14 @@
 import { EGYPTIAN_DICT } from "./egyptianDict";
 import { EGYPTIAN_EXTRA } from "./egyptianExtra";
+import { EGYPTIAN_PAGES } from "./egyptianPages";
+import { EGYPTIAN_PAGES_2 } from "./egyptianPages2";
 
-const DICT: Record<string, string> = { ...EGYPTIAN_DICT, ...EGYPTIAN_EXTRA };
+const DICT: Record<string, string> = {
+  ...EGYPTIAN_DICT,
+  ...EGYPTIAN_EXTRA,
+  ...EGYPTIAN_PAGES,
+  ...EGYPTIAN_PAGES_2,
+};
 
 
 /**
@@ -28,7 +35,7 @@ const ATTRS = ["placeholder", "aria-label", "title", "alt"] as const;
 
 const lookup = (raw: string): string | null => {
   const text = raw.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
-  if (!text || text.length > 400) return null;
+  if (!text || text.length > 700) return null;
   // Skip pure numbers / symbols — nothing to translate.
   if (!/[A-Za-z]/.test(text)) return null;
   const hit = DICT[text];
