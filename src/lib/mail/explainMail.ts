@@ -33,7 +33,7 @@ export async function explainMail(input: ExplainInput): Promise<string> {
       messages: [
         {
           role: "user",
-          content: `From: ${input.from}\nSubject: ${input.subject}\n\n${input.body.slice(0, 6000)}`,
+          content: `${system}\n\n---\n${egyptian ? "الرسالة دي جاتلي في البريد، اشرحهالي:" : "Explain this email I received:"}\n\nFrom: ${input.from}\nSubject: ${input.subject}\n\n${input.body.slice(0, 6000)}\n---\n${egyptian ? "اشرح الإيميل ده بس، متتكلمش عن حاجة تانية." : "Only explain the email above; do not talk about anything else."}`,
         },
       ],
     }),
