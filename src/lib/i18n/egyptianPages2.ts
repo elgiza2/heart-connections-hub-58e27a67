@@ -419,4 +419,8 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "Tap now to enter": "دوس دلوقتي عشان تدخل",
   "Skip to content": "روح للمحتوى",
   "Pay 8 months, get 12 — saves $80 vs $20/mo": "ادفع 8 شهور وخد 12 — بتوفر 80 دولار مقارنة بـ 20 دولار شهري",
+  "Your first month of Pro": "أول شهر Pro",
+  "renews at $20/month": "بيتجدد بـ 20 دولار في الشهر",
+  "cancel anytime": "تقدر تلغي في أي وقت",
+  "Pay 8 months, get 12 — saves $80 vs $20/month": "ادفع 8 شهور وخد 12 — بتوفر 80 دولار مقارنة بـ 20 دولار في الشهر",
 };
