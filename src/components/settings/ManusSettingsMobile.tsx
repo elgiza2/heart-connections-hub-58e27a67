@@ -21,6 +21,7 @@ import {
   Moon,
   Sun,
   Languages,
+  Mail as MailIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/common/ConfirmDialog";
@@ -123,6 +124,7 @@ const ManusSettingsMobile = () => {
       },
     },
     { icon: Languages, label: "Language", trailing: langLabel, path: "/settings/language" },
+    { icon: MailIcon, label: "Mail", trailing: "@megsyai.com", path: "/settings/mail" },
   ];
 
 

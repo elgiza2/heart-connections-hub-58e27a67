@@ -53,6 +53,11 @@ export const SKILL_TOOLS: SkillToolOption[] = [
     label: "Canva Slides",
     description: "Generate slide decks via Canva",
   },
+  {
+    name: "MEGSY_MAIL",
+    label: "Megsy Mail",
+    description: "Send and read mail from your own username@megsyai.com inbox",
+  },
 ];
 
 export const SKILL_MODELS: { id: string; label: string }[] = [
