@@ -177,7 +177,9 @@ export default function MailPage() {
       <div className="p-5">
         <div className="flex items-center gap-3">
           <div className="grid place-items-center w-11 h-11 rounded-full bg-background/15">
-            <Mail className="w-5 h-5" />
+            <span className="contents">
+              <Mail className="w-5 h-5" />
+            </span>
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold truncate" dir="ltr">
@@ -195,7 +197,9 @@ export default function MailPage() {
               toast.success(tx("Copied"));
             }}
           >
-            <Copy className="w-4 h-4" />
+            <span className="contents">
+              <Copy className="w-4 h-4" />
+            </span>
           </button>
         </div>
 
@@ -227,7 +231,9 @@ export default function MailPage() {
             onClick={() => void refresh(folder)}
             className="grid place-items-center w-11 h-11 rounded-full bg-background/15 hover:bg-background/25 transition-colors"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            <span className="contents">
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </span>
           </button>
         </div>
       </div>
@@ -245,7 +251,9 @@ export default function MailPage() {
       />
       {query && (
         <button type="button" aria-label={tx("Clear")} onClick={() => setQuery("")}>
-          <X className="w-4 h-4 text-foreground/40" />
+          <span className="contents">
+            <X className="w-4 h-4 text-foreground/40" />
+          </span>
         </button>
       )}
     </div>
