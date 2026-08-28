@@ -315,36 +315,20 @@ export async function setUserLang(
 }
 
 /**
- * Run once on app boot: apply the stored language, or detect + persist on
- * first visit so the choice sticks. Also pulls the remote language for
- * signed-in users so a preference set on another device propagates.
+ * Run once on app boot: apply the stored language, or detect + persist it on
+ * the first visit so the choice stays stable.
  */
 export async function initUserLang(): Promise<AuthLang> {
-  // If a previous session auto-detected a language, discard it so English is the default.
-  try {
-    if (typeof localStorage !== "undefined" && localStorage.getItem("language-autodetected") === "1") {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem("language");
-      localStorage.removeItem(DETECTED_FLAG_KEY);
-      localStorage.removeItem("language-autodetected");
-    }
-  } catch {
-    // ignore
-  }
-
   let lang = readStoredLang();
-
-  // No explicit preference — default to English (auto-detection disabled).
   if (!lang) {
-    lang = "en";
+    lang = detectLang();
     persistLangLocally(lang);
   }
   applyHtmlLang(lang);
   emitChange(lang);
-
-  // English-only product: no remote language override.
   return lang;
 }
+
 
 /** React hook: returns current language and re-renders on change. */
 export function useUserLang(): AuthLang {
