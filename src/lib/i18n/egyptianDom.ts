@@ -42,7 +42,9 @@ const lookup = (raw: string): string | null => {
 const translateNode = (node: Text) => {
   const parent = node.parentElement;
   if (!parent || SKIP_TAGS.has(parent.tagName)) return;
-  if (parent.closest("[data-no-translate], [translate='no']")) return;
+  // NOTE: <html translate="no"> is set globally, so only element-level opt-outs count.
+  const optOut = parent.closest("[data-no-translate], [translate='no']");
+  if (optOut && optOut !== document.documentElement) return;
   const original = node.nodeValue || "";
   const hit = lookup(original);
   if (!hit) return;
