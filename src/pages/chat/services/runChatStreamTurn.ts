@@ -1035,6 +1035,16 @@ export async function runChatStreamTurn(opts: RunChatStreamTurnOptions): Promise
           assistantContent = await handleScheduleTag(assistantContent);
         } catch { /* noop */ }
       }
+      // Detect <MEGSY_MAIL .../> — the assistant's own mailbox tool.
+      if (/<MEGSY_MAIL/i.test(assistantContent)) {
+        try {
+          const { handleMailTag } = await import("@/lib/chat/handleMailTag");
+          const res = await handleMailTag(assistantContent);
+          assistantContent = res.notes.length
+            ? `${res.text}\n\n${res.notes.join("\n")}`.trim()
+            : res.text;
+        } catch { /* noop */ }
+      }
       if (assistantRenderTimer) {
         clearTimeout(assistantRenderTimer);
         flushAssistantUpdate();
