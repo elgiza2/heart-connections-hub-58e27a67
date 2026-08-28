@@ -6247,6 +6247,125 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_messages: {
+        Row: {
+          body_html: string | null
+          body_text: string
+          cc_address: string | null
+          created_at: string
+          delivery_status: string
+          direction: string
+          external_message_id: string | null
+          folder: string
+          from_address: string
+          from_name: string | null
+          id: string
+          is_read: boolean
+          is_starred: boolean
+          mailbox_id: string
+          meta: Json
+          origin: string
+          snippet: string
+          spam_score: number
+          subject: string
+          thread_id: string | null
+          to_address: string
+          user_id: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string
+          cc_address?: string | null
+          created_at?: string
+          delivery_status?: string
+          direction?: string
+          external_message_id?: string | null
+          folder?: string
+          from_address: string
+          from_name?: string | null
+          id?: string
+          is_read?: boolean
+          is_starred?: boolean
+          mailbox_id: string
+          meta?: Json
+          origin?: string
+          snippet?: string
+          spam_score?: number
+          subject?: string
+          thread_id?: string | null
+          to_address: string
+          user_id: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string
+          cc_address?: string | null
+          created_at?: string
+          delivery_status?: string
+          direction?: string
+          external_message_id?: string | null
+          folder?: string
+          from_address?: string
+          from_name?: string | null
+          id?: string
+          is_read?: boolean
+          is_starred?: boolean
+          mailbox_id?: string
+          meta?: Json
+          origin?: string
+          snippet?: string
+          spam_score?: number
+          subject?: string
+          thread_id?: string | null
+          to_address?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_messages_mailbox_id_fkey"
+            columns: ["mailbox_id"]
+            isOneToOne: false
+            referencedRelation: "mailboxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mailboxes: {
+        Row: {
+          address: string
+          ai_enabled: boolean
+          created_at: string
+          display_name: string | null
+          external_enabled: boolean
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          address: string
+          ai_enabled?: boolean
+          created_at?: string
+          display_name?: string | null
+          external_enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          address?: string
+          ai_enabled?: boolean
+          created_at?: string
+          display_name?: string | null
+          external_enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       manus_keys: {
         Row: {
           api_key: string
@@ -14848,6 +14967,46 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_mailbox: {
+        Args: { _hint?: string; _user_id: string }
+        Returns: {
+          address: string
+          ai_enabled: boolean
+          created_at: string
+          display_name: string | null
+          external_enabled: boolean
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "mailboxes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      ensure_my_mailbox: {
+        Args: never
+        Returns: {
+          address: string
+          ai_enabled: boolean
+          created_at: string
+          display_name: string | null
+          external_enabled: boolean
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "mailboxes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       expire_prize_rewards: { Args: never; Returns: number }
       game_crash_cashout: {
         Args: { _at: number; _bet_id: string; _telegram_id: number }
@@ -15515,6 +15674,7 @@ export type Database = {
         }
         Returns: string
       }
+      mail_slugify: { Args: { _raw: string }; Returns: string }
       mark_media_key_exhausted: {
         Args: { p_key_id: string; p_reason?: string }
         Returns: undefined
