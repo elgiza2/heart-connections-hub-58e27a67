@@ -389,7 +389,6 @@ function BackButton({ label, onClick }: { label: string; onClick: () => void }) 
     </button>
   );
 }
-}
 
 function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   // Rendered in a portal: settings pages apply global CSS that collapses
