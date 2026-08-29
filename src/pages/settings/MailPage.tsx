@@ -20,7 +20,6 @@ import {
   Search as SearchIcon,
   Send,
   Sparkles,
-  SquarePen,
   Trash2,
   Type as TypeIcon,
   X,
