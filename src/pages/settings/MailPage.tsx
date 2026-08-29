@@ -24,6 +24,7 @@ import {
   Type as TypeIcon,
   X,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DesktopSettingsLayout from "@/components/settings/DesktopSettingsLayout";
@@ -275,7 +276,7 @@ export default function MailPage() {
 
   const activeFolder = FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox";
 
-  /* ── Header: ••• / folder pill / search ── */
+  /* ── Header: refresh / your address pill (tap to copy) / search ── */
   const Header = (
     <IosHeader
       left={
@@ -284,10 +285,27 @@ export default function MailPage() {
         </RoundBtn>
       }
       title={
-        <PillTitle>
-          {unread > 0 && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
-          <span className="truncate">{tx(activeFolder)}</span>
-        </PillTitle>
+        <button
+          type="button"
+          onClick={copyAddress}
+          aria-label={tx("Copy address")}
+          style={{ borderRadius: 9999 }}
+          className="mx-auto flex max-w-full items-center gap-2 rounded-full bg-card px-4 py-2.5 text-[13.5px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+        >
+          <span className="contents">
+            <Inbox className="h-4 w-4 shrink-0 text-foreground/45" />
+          </span>
+          <span className="truncate" dir="ltr">
+            {box?.address ?? "…"}
+          </span>
+          <span className="contents">
+            {copied ? (
+              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
+            )}
+          </span>
+        </button>
       }
       right={
         <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
