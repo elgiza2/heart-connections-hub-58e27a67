@@ -302,11 +302,8 @@ export default function MailPage() {
           onClick={copyAddress}
           aria-label={tx("Copy address")}
           style={{ borderRadius: 9999 }}
-          className="mx-auto flex max-w-full items-center gap-2 rounded-full bg-card px-4 py-2.5 text-[13.5px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+          className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 px-1 py-2 text-[14px] font-semibold transition-opacity active:opacity-60"
         >
-          <span className="contents">
-            <Inbox className="h-4 w-4 shrink-0 text-foreground/45" />
-          </span>
           <span className="truncate" dir="ltr">
             {box?.address ?? "…"}
           </span>
