@@ -95,9 +95,16 @@ function bucketOf(iso: string): "Today" | "Yesterday" | "This week" | "Earlier" 
 
 /* ── iOS 26 liquid-glass shared primitives ─────────────────────── */
 
-/** Liquid-glass surface used by every header bar and action bar. */
+/** Liquid-glass surface used by every header bar, action bar and dock. */
 const glassBarCls =
   "border border-white/40 bg-card/60 shadow-[0_18px_44px_-14px_hsl(var(--foreground)/0.25),inset_0_1px_0_hsl(0_0%_100%/0.5)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10";
+
+/** Grouped content card — the single content surface used across all mail screens. */
+const glassCardCls =
+  "overflow-hidden rounded-[24px] border border-white/40 bg-card/70 shadow-[0_10px_30px_-18px_hsl(var(--foreground)/0.35),inset_0_1px_0_hsl(0_0%_100%/0.45)] backdrop-blur-xl dark:border-white/10";
+
+/** Hairline separator inside grouped cards. */
+const hairline = "h-px bg-foreground/[0.07]";
 
 /** Circular control that lives inside a glass bar. */
 function RoundBtn({
@@ -135,7 +142,7 @@ function RoundBtn({
 /** Centered title inside a glass header bar. */
 function HeaderTitle({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 truncate px-1 text-[14.5px] font-semibold">
+    <span className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 truncate px-1 text-[15px] font-semibold tracking-tight">
       {children}
     </span>
   );
@@ -159,12 +166,38 @@ function IosHeader({
       className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
       style={{ borderRadius: 9999 }}
     >
-      {left}
+      <div className="flex shrink-0 items-center gap-1.5">{left}</div>
       <div className="min-w-0 flex-1 text-center">{title}</div>
-      {right}
+      <div className="flex shrink-0 items-center gap-1.5">{right}</div>
     </motion.div>
   );
 }
+
+/** Unified bottom glass action bar used by the reader and the composer. */
+function IosActionBar({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.25, duration: 0.5, delay: 0.05 }}
+      className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
+      style={{ borderRadius: 9999 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Label + value row inside a grouped card (iOS inset list style). */
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-[48px] items-center gap-3 px-4">
+      <span className="w-16 shrink-0 text-[13px] font-semibold text-foreground/45">{label}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 
 export default function MailPage() {
   const navigate = useNavigate();
