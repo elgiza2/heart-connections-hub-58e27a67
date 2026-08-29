@@ -163,6 +163,7 @@ export default function MailPage() {
   const [folder, setFolder] = useState<MailFolder>("inbox");
   const [items, setItems] = useState<MailMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [open, setOpen] = useState<MailMessage | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [query, setQuery] = useState("");
