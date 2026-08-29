@@ -812,9 +812,9 @@ function Composer({
             </RoundBtn>
           }
           title={
-            <PillTitle>
+            <HeaderTitle>
               <span className="truncate">{tx("Compose")}</span>
-            </PillTitle>
+            </HeaderTitle>
           }
           right={
             <RoundBtn label={tx("New message")}>
