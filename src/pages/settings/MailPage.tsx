@@ -93,9 +93,13 @@ function bucketOf(iso: string): "Today" | "Yesterday" | "This week" | "Earlier" 
   return "Earlier";
 }
 
-/* ── iOS-style shared primitives ───────────────────────────────── */
+/* ── iOS 26 liquid-glass shared primitives ─────────────────────── */
 
-/** Circular floating control used in every mail header. */
+/** Liquid-glass surface used by every header bar and action bar. */
+const glassBarCls =
+  "border border-white/40 bg-card/60 shadow-[0_18px_44px_-14px_hsl(var(--foreground)/0.25),inset_0_1px_0_hsl(0_0%_100%/0.5)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10";
+
+/** Circular control that lives inside a glass bar. */
 function RoundBtn({
   label,
   onClick,
@@ -117,10 +121,10 @@ function RoundBtn({
       disabled={disabled}
       // Settings pages force a 16px radius on buttons; keep these perfectly round.
       style={{ borderRadius: 9999 }}
-      className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-all active:scale-95 disabled:opacity-40 ${
+      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-all active:scale-90 disabled:opacity-40 ${
         tone === "accent"
-          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-          : "bg-card text-foreground/75 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] hover:text-foreground"
+          ? "bg-primary text-primary-foreground shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.6),inset_0_1px_0_hsl(0_0%_100%/0.35)]"
+          : "bg-foreground/[0.06] text-foreground/70 hover:bg-foreground/[0.1] hover:text-foreground"
       }`}
     >
       <span className="contents">{children}</span>
@@ -128,15 +132,16 @@ function RoundBtn({
   );
 }
 
-/** Centered pill title of the iOS header. */
-function PillTitle({ children }: { children: React.ReactNode }) {
+/** Centered title inside a glass header bar. */
+function HeaderTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex max-w-[62%] items-center gap-2 truncate rounded-full bg-card px-5 py-2.5 text-[15px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)]">
+    <span className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 truncate px-1 text-[14.5px] font-semibold">
       {children}
-    </div>
+    </span>
   );
 }
 
+/** iOS 26 liquid-glass navigation bar — one unified pill for every mail screen. */
 function IosHeader({
   left,
   title,
@@ -147,11 +152,17 @@ function IosHeader({
   right: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 px-1 py-1">
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+      className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
+      style={{ borderRadius: 9999 }}
+    >
       {left}
-      <div className="min-w-0 flex-1">{title}</div>
+      <div className="min-w-0 flex-1 text-center">{title}</div>
       {right}
-    </div>
+    </motion.div>
   );
 }
 
