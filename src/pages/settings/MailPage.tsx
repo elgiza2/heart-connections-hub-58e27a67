@@ -1,4 +1,4 @@
-/** @doc Megsy Mail — editorial mail client: hero inbox header, grouped list, full-bleed reader, compose, AI explain. */
+/** @doc Megsy Mail — iOS-style mail client: floating pill headers, soft cards, grouped list, reader & composer sheets. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -11,12 +11,17 @@ import {
   Forward,
   Inbox,
   Loader2,
+  MoreHorizontal,
+  Paperclip,
   PenLine,
+  Plus,
   RefreshCw,
   Search as SearchIcon,
   Send,
   Sparkles,
+  SquarePen,
   Trash2,
+  Type as TypeIcon,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -75,13 +80,75 @@ function fmtDate(iso: string) {
   return d.toLocaleDateString([], sameYear ? { day: "numeric", month: "short" } : { year: "numeric", month: "short" });
 }
 
-/** Groups messages into Today / This week / Earlier buckets. */
-function bucketOf(iso: string): "Today" | "This week" | "Earlier" {
-  const d = new Date(iso).getTime();
-  const now = Date.now();
-  if (new Date(iso).toDateString() === new Date().toDateString()) return "Today";
-  if (now - d < 7 * 864e5) return "This week";
+/** Groups messages into Today / Yesterday / This week / Earlier buckets. */
+function bucketOf(iso: string): "Today" | "Yesterday" | "This week" | "Earlier" {
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return "Today";
+  const y = new Date(now.getTime() - 864e5);
+  if (d.toDateString() === y.toDateString()) return "Yesterday";
+  if (now.getTime() - d.getTime() < 7 * 864e5) return "This week";
   return "Earlier";
+}
+
+/* ── iOS-style shared primitives ───────────────────────────────── */
+
+/** Circular floating control used in every mail header. */
+function RoundBtn({
+  label,
+  onClick,
+  children,
+  tone = "plain",
+  disabled,
+}: {
+  label: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+  tone?: "plain" | "accent";
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-all active:scale-95 disabled:opacity-40 ${
+        tone === "accent"
+          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+          : "bg-card text-foreground/75 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] hover:text-foreground"
+      }`}
+    >
+      <span className="contents">{children}</span>
+    </button>
+  );
+}
+
+/** Centered pill title of the iOS header. */
+function PillTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto flex max-w-[62%] items-center gap-2 truncate rounded-full bg-card px-5 py-2.5 text-[15px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)]">
+      {children}
+    </div>
+  );
+}
+
+function IosHeader({
+  left,
+  title,
+  right,
+}: {
+  left: React.ReactNode;
+  title: React.ReactNode;
+  right: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-1 py-1">
+      {left}
+      <div className="min-w-0 flex-1">{title}</div>
+      {right}
+    </div>
+  );
 }
 
 export default function MailPage() {
@@ -97,6 +164,7 @@ export default function MailPage() {
   const [open, setOpen] = useState<MailMessage | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -189,93 +257,82 @@ export default function MailPage() {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  /* ── Hero: dark editorial card with the address and live counts ── */
-  const Hero = (
-    <div className="relative overflow-hidden rounded-[26px] bg-foreground px-5 py-5 text-background">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -end-16 -top-20 h-52 w-52 rounded-full bg-background/10 blur-2xl"
-      />
-      <div className="relative flex items-center gap-2">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-background/15">
-          <span className="contents">
-            <Inbox className="h-4 w-4" />
-          </span>
-        </span>
-        <p className="text-[12px] font-medium uppercase tracking-[0.14em] opacity-60">{tx("Megsy Mail")}</p>
-      </div>
+  const activeFolder = FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox";
 
+  /* ── Header: ••• / folder pill / search ── */
+  const Header = (
+    <IosHeader
+      left={
+        <RoundBtn label={tx("Refresh")} onClick={() => void refresh(folder)}>
+          {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <RefreshCw className="h-[18px] w-[18px]" />}
+        </RoundBtn>
+      }
+      title={
+        <PillTitle>
+          {unread > 0 && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
+          <span className="truncate">{tx(activeFolder)}</span>
+        </PillTitle>
+      }
+      right={
+        <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
+          {searching ? <X className="h-[18px] w-[18px]" /> : <SearchIcon className="h-[18px] w-[18px]" />}
+        </RoundBtn>
+      }
+    />
+  );
+
+  /* ── Address card + optional search field ── */
+  const Meta = (
+    <div className="mt-3 space-y-2.5">
       <button
         type="button"
         onClick={copyAddress}
-        className="group relative mt-4 flex w-full items-center gap-2 text-start"
+        className="flex w-full items-center gap-3 rounded-[20px] bg-card px-4 py-3 text-start shadow-[0_1px_3px_hsl(var(--foreground)/0.07)] transition-transform active:scale-[0.99]"
         aria-label={tx("Copy address")}
       >
-        <span className="min-w-0 flex-1 truncate text-[19px] font-semibold tracking-tight" dir="ltr">
-          {box?.address ?? "…"}
-        </span>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-background/15 transition-colors group-hover:bg-background/25">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/[0.06] text-foreground/60">
           <span className="contents">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            <Inbox className="h-[17px] w-[17px]" />
           </span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-medium uppercase tracking-wide text-foreground/40">
+            {tx("Your Megsy address")}
+          </span>
+          <span className="block truncate text-[14px] font-semibold" dir="ltr">
+            {box?.address ?? "…"}
+          </span>
+        </span>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/[0.05] text-foreground/55">
+          <span className="contents">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</span>
         </span>
       </button>
 
-      <div className="relative mt-5 flex items-center gap-6">
-        <Stat value={unread} label={tx("Unread")} />
-        <span className="h-8 w-px bg-background/20" />
-        <Stat value={items.length} label={tx("Messages")} />
-        <span className="h-8 w-px bg-background/20" />
-        <Stat value={items.filter((m) => m.origin === "ai").length} label={tx("From Megsy")} />
-      </div>
-    </div>
-  );
-
-  /* ── Search + folders on one quiet control row ── */
-  const Controls = (
-    <div className="space-y-3">
-      <div className="flex h-11 items-center gap-2.5 rounded-2xl border border-foreground/[0.07] bg-foreground/[0.03] px-3.5 focus-within:border-foreground/20">
-        <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={tx("Search email")}
-          className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/35"
-        />
-        {query && (
-          <button type="button" aria-label={tx("Clear")} onClick={() => setQuery("")} className="shrink-0">
-            <span className="contents">
-              <X className="h-4 w-4 text-foreground/35" />
-            </span>
-          </button>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        {FOLDERS.map((f) => {
-          const active = folder === f.key;
-          return (
-            <button
-              key={f.key}
-              onClick={() => setFolder(f.key)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
-                active
-                  ? "bg-foreground text-background"
-                  : "bg-foreground/[0.05] text-foreground/55 hover:bg-foreground/[0.09] hover:text-foreground/80"
-              }`}
-            >
-              {tx(f.label)}
-              {f.key === "inbox" && unread > 0 && <span className="ms-1.5 tabular-nums opacity-70">{unread}</span>}
+      {searching && (
+        <div className="flex h-11 items-center gap-2.5 rounded-[20px] bg-card px-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={tx("Search email")}
+            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-foreground/35"
+          />
+          {query && (
+            <button type="button" aria-label={tx("Clear")} onClick={() => setQuery("")} className="shrink-0">
+              <span className="contents">
+                <X className="h-4 w-4 text-foreground/35" />
+              </span>
             </button>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
-  /* ── List: date-grouped rows on a single soft surface ── */
+  /* ── List: date-grouped rows on white cards ── */
   const List = (
-    <div className="mt-5">
+    <div className="mt-4">
       {loading && (
         <div className="grid place-items-center py-20 text-foreground/40">
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -284,7 +341,7 @@ export default function MailPage() {
 
       {!loading && visible.length === 0 && (
         <div className="grid place-items-center gap-2 py-20 text-center">
-          <span className="grid h-12 w-12 place-items-center rounded-full bg-foreground/[0.05] text-foreground/35">
+          <span className="grid h-12 w-12 place-items-center rounded-full bg-card text-foreground/35 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
             <span className="contents">
               <Inbox className="h-5 w-5" />
             </span>
@@ -295,11 +352,9 @@ export default function MailPage() {
 
       {!loading &&
         groups.map((g) => (
-          <section key={g.label} className="mb-5">
-            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/35">
-              {tx(g.label)}
-            </p>
-            <div className="overflow-hidden rounded-[22px] border border-foreground/[0.07] bg-foreground/[0.02]">
+          <section key={g.label} className="mb-4">
+            <p className="mb-1.5 px-2 text-[13px] font-semibold text-foreground/45">{tx(g.label)}</p>
+            <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
               {g.rows.map((m, i) => {
                 const addr = folder === "sent" ? m.to_address : m.from_address;
                 const who = displayName(folder === "sent" ? null : m.from_name, addr);
@@ -307,39 +362,33 @@ export default function MailPage() {
                   <button
                     key={m.id}
                     onClick={() => void openMessage(m)}
-                    className={`flex w-full gap-3 px-4 py-3.5 text-start transition-colors hover:bg-foreground/[0.04] ${
-                      i > 0 ? "border-t border-foreground/[0.06]" : ""
-                    }`}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors hover:bg-foreground/[0.03]"
                   >
-                    <span className="relative mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-foreground/[0.07] text-[11.5px] font-bold text-foreground/70">
+                    <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-foreground/[0.07] text-[12px] font-bold text-foreground/70">
                       {initials(who)}
                       {!m.is_read && (
-                        <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary" />
+                        <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-primary" />
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline gap-2">
+                      <span className="flex items-center gap-2">
                         <span
-                          className={`min-w-0 flex-1 truncate text-[14px] ${
-                            m.is_read ? "font-medium text-foreground/70" : "font-bold text-foreground"
+                          className={`min-w-0 flex-1 truncate text-[15px] ${
+                            m.is_read ? "font-medium text-foreground/75" : "font-bold text-foreground"
                           }`}
                         >
                           {who}
                         </span>
-                        {m.origin === "ai" && <Bot className="h-3.5 w-3.5 shrink-0 self-center text-foreground/35" />}
-                        <span className="shrink-0 text-[11px] tabular-nums text-foreground/35">
+                        {m.origin === "ai" && <Bot className="h-3.5 w-3.5 shrink-0 text-foreground/35" />}
+                        <span className="shrink-0 text-[12px] tabular-nums text-foreground/40">
                           {fmtDate(m.created_at)}
                         </span>
                       </span>
-                      <span
-                        className={`mt-0.5 block truncate text-[13.5px] ${
-                          m.is_read ? "text-foreground/65" : "font-semibold text-foreground"
-                        }`}
-                      >
-                        {m.subject || tx("(no subject)")}
+                      <span className="mt-0.5 block truncate text-[13.5px] text-foreground/45">
+                        {m.snippet || m.subject || tx("(no subject)")}
                       </span>
-                      <span className="mt-0.5 block truncate text-[12.5px] text-foreground/40">{m.snippet}</span>
                     </span>
+                    {i < 0 && null}
                   </button>
                 );
               })}
@@ -350,21 +399,42 @@ export default function MailPage() {
   );
 
   const Body = (
-    <section className="pb-28">
-      {Hero}
-      <div className="mt-5">{Controls}</div>
+    <section className="-mx-1 pb-32">
+      {Header}
+      {Meta}
       {List}
 
-      <button
-        type="button"
-        onClick={() => setDraft({ to: "", subject: "", text: "" })}
-        className="fixed bottom-24 end-5 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-foreground px-5 text-[14px] font-semibold text-background shadow-xl shadow-foreground/25 transition-transform hover:scale-[1.03] md:bottom-8"
-      >
-        <span className="contents">
-          <PenLine className="h-4 w-4" />
-        </span>
-        <span>{tx("Compose")}</span>
-      </button>
+      {/* iOS floating tab dock + compose FAB */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 flex justify-center px-4 md:bottom-8">
+        <div className="pointer-events-auto flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full bg-card/95 p-1.5 shadow-[0_8px_28px_hsl(var(--foreground)/0.14)] backdrop-blur">
+            {FOLDERS.map((f) => {
+              const active = folder === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFolder(f.key)}
+                  className={`rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+                    active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
+                  }`}
+                >
+                  {tx(f.label)}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            aria-label={tx("Compose")}
+            onClick={() => setDraft({ to: "", subject: "", text: "" })}
+            className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+          >
+            <span className="contents">
+              <Plus className="h-5 w-5" />
+            </span>
+          </button>
+        </div>
+      </div>
 
       {open && (
         <MessageView
@@ -392,19 +462,6 @@ export default function MailPage() {
     </section>
   );
 
-  const RefreshBtn = (
-    <button
-      type="button"
-      aria-label={tx("Refresh")}
-      onClick={() => void refresh(folder)}
-      className="grid h-10 w-10 place-items-center rounded-full border border-foreground/10 bg-foreground/[0.03] text-foreground/55 transition-colors hover:bg-foreground/[0.08] hover:text-foreground"
-    >
-      <span className="contents">
-        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-      </span>
-    </button>
-  );
-
   if (isMobile) {
     return (
       <ProfileGlassShell
@@ -412,7 +469,6 @@ export default function MailPage() {
         subtitle={tx("Your own Megsy inbox")}
         onBack={() => (window.history.length > 1 ? window.history.back() : navigate("/settings"))}
       >
-        <div className="mb-3 flex justify-end">{RefreshBtn}</div>
         {Body}
       </ProfileGlassShell>
     );
@@ -420,39 +476,15 @@ export default function MailPage() {
   return (
     <DesktopSettingsLayout>
       <div className="mx-auto w-full max-w-2xl px-4 md:px-0">
-        <header className="mb-6 flex items-center gap-3">
-          <BackButton label={tx("Back")} onClick={() => navigate("/settings")} />
+        <header className="mb-4 flex items-center gap-3">
+          <RoundBtn label={tx("Back")} onClick={() => navigate("/settings")}>
+            <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+          </RoundBtn>
           <h1 className="min-w-0 flex-1 text-[24px] font-semibold leading-tight tracking-tight">{tx("Mail")}</h1>
-          {RefreshBtn}
         </header>
         {Body}
       </div>
     </DesktopSettingsLayout>
-  );
-}
-
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <p className="text-[20px] font-bold leading-none tabular-nums">{value}</p>
-      <p className="mt-1 text-[11px] opacity-60">{label}</p>
-    </div>
-  );
-}
-
-/** Unified, clearly visible back button used across the mail experience. */
-function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-foreground/10 bg-foreground/[0.04] text-foreground/70 shadow-sm transition-all hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground active:scale-95"
-    >
-      <span className="contents">
-        <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
-      </span>
-    </button>
   );
 }
 
@@ -461,11 +493,11 @@ function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () =
   // icon-bearing controls, and the overlay must escape that scope.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-black/45 backdrop-blur-[3px] sm:place-items-center sm:p-6"
+      className="fixed inset-0 z-50 grid place-items-end bg-black/35 backdrop-blur-[3px] sm:place-items-center sm:p-6"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[28px] border border-foreground/10 bg-background shadow-2xl sm:max-w-2xl sm:rounded-[26px]"
+        className="flex max-h-[95vh] w-full flex-col overflow-hidden rounded-t-[30px] bg-muted shadow-2xl sm:max-w-2xl sm:rounded-[30px]"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
@@ -531,6 +563,7 @@ function MessageView({
 }) {
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
+  const [more, setMore] = useState(false);
 
   const explain = async () => {
     setExplaining(true);
@@ -552,108 +585,144 @@ function MessageView({
 
   return (
     <Sheet onClose={onClose}>
-      {/* Toolbar: back + folder context + destructive actions */}
-      <div className="flex items-center gap-2 border-b border-foreground/[0.08] bg-background/95 px-4 py-3 backdrop-blur">
-        <BackButton label={tx("Back")} onClick={onClose} />
-        <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground/70">
-          {tx(FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox")}
-        </p>
-        <button
-          type="button"
-          onClick={() => onAct(msg, folder === "spam" ? "inbox" : "spam")}
-          className="rounded-full border border-foreground/10 px-3 py-1.5 text-[12px] font-medium text-foreground/55 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
-        >
-          {tx(folder === "spam" ? "Not spam" : "Mark as spam")}
-        </button>
-        <button
-          type="button"
-          aria-label={tx(folder === "trash" ? "Delete forever" : "Move to trash")}
-          onClick={() => onAct(msg, folder === "trash" ? "delete" : "trash")}
-          className="grid h-9 w-9 place-items-center rounded-full text-foreground/45 transition-colors hover:bg-destructive/10 hover:text-destructive"
-        >
-          <span className="contents">
-            <Trash2 className="h-4 w-4" />
-          </span>
-        </button>
+      <div className="px-3 pt-3">
+        <IosHeader
+          left={
+            <RoundBtn label={tx("Back")} onClick={onClose}>
+              <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+            </RoundBtn>
+          }
+          title={
+            <PillTitle>
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-[10px] font-bold text-foreground/70">
+                {initials(who)}
+              </span>
+              <span className="truncate" dir="ltr">
+                {who}
+              </span>
+            </PillTitle>
+          }
+          right={
+            <RoundBtn
+              label={tx(folder === "trash" ? "Delete forever" : "Move to trash")}
+              onClick={() => onAct(msg, folder === "trash" ? "delete" : "trash")}
+            >
+              <Trash2 className="h-[18px] w-[18px]" />
+            </RoundBtn>
+          }
+        />
       </div>
 
-      {/* Scrollable body */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/35">
-          {new Date(msg.created_at).toLocaleString()}
-        </p>
-        <h2 className="mt-2 text-[24px] font-bold leading-tight tracking-tight">
-          {msg.subject || tx("(no subject)")}
-        </h2>
-
-        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-foreground/[0.07] bg-foreground/[0.02] px-3.5 py-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-foreground/[0.07] text-[12px] font-bold text-foreground/70">
-            {initials(who)}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-semibold" dir="ltr">
-              {who}
-            </p>
-            <p className="truncate text-[11.5px] text-foreground/45" dir="ltr">
+      {/* Subject / To card */}
+      <div className="px-4 pt-3">
+        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          <div className="flex gap-2 px-4 py-3">
+            <span className="shrink-0 text-[14px] font-semibold">{tx("Subject")}:</span>
+            <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75">
+              {msg.subject || tx("(no subject)")}
+            </span>
+          </div>
+          <div className="h-px bg-foreground/[0.06]" />
+          <div className="flex items-center gap-2 px-4 py-3">
+            <span className="shrink-0 text-[14px] font-semibold">{tx("From")}:</span>
+            <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75" dir="ltr">
               {msg.from_address}
-            </p>
+            </span>
           </div>
         </div>
+      </div>
 
-        <div className="mt-6">
+      {/* Body card */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
+        <div className="rounded-[20px] bg-card p-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-foreground/35">
+            {new Date(msg.created_at).toLocaleString()}
+          </p>
           {msg.body_html ? (
             <HtmlBody html={msg.body_html} />
           ) : (
             <p className="whitespace-pre-wrap text-[15px] leading-[1.8] text-foreground/85">{msg.body_text}</p>
           )}
-        </div>
 
-        {explanation && (
-          <div className="mt-6 rounded-[22px] border border-primary/20 bg-primary/[0.06] p-4">
-            <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold text-primary">
-              <span className="contents">
-                <Sparkles className="h-3.5 w-3.5" />
-              </span>
-              {tx("Megsy's summary")}
-            </p>
-            <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
-          </div>
-        )}
+          {explanation && (
+            <div className="mt-5 rounded-[18px] bg-primary/[0.07] p-4">
+              <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold text-primary">
+                <span className="contents">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </span>
+                {tx("Megsy's summary")}
+              </p>
+              <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Action bar */}
-      <div className="flex items-center gap-2 border-t border-foreground/[0.08] px-4 py-3">
+      {/* iOS action bar: big Reply pill + circular actions */}
+      <div className="flex items-center gap-2.5 px-4 pb-5 pt-1">
         <button
           type="button"
           onClick={() => onReply(msg)}
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-foreground text-[13.5px] font-semibold text-background transition-opacity hover:opacity-90"
+          className="inline-flex h-13 min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-primary text-[16px] font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-[0.98]"
         >
           <span className="contents">
-            <CornerUpLeft className="h-4 w-4 rtl:rotate-180" />
+            <CornerUpLeft className="h-[18px] w-[18px] rtl:rotate-180" />
           </span>
           {tx("Reply")}
         </button>
         <button
           type="button"
+          aria-label={tx("Forward")}
           onClick={() => onForward(msg)}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-foreground/12 px-4 text-[13.5px] text-foreground/75 transition-colors hover:bg-foreground/[0.05]"
+          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
         >
           <span className="contents">
-            <Forward className="h-4 w-4 rtl:rotate-180" />
+            <Forward className="h-[18px] w-[18px] rtl:rotate-180" />
           </span>
-          <span className="hidden sm:inline">{tx("Forward")}</span>
         </button>
-        <button
-          type="button"
-          disabled={explaining}
-          onClick={() => void explain()}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-primary/25 bg-primary/[0.06] px-4 text-[13.5px] font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
-        >
-          <span className="contents">
-            {explaining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          </span>
-          <span className="hidden sm:inline">{tx("Explain with AI")}</span>
-        </button>
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            aria-label={tx("More")}
+            onClick={() => setMore((v) => !v)}
+            className="grid h-[52px] w-[52px] place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+          >
+            <span className="contents">
+              <MoreHorizontal className="h-[18px] w-[18px]" />
+            </span>
+          </button>
+          {more && (
+            <div className="absolute bottom-[60px] end-0 w-56 overflow-hidden rounded-[18px] bg-card p-1 shadow-[0_12px_36px_hsl(var(--foreground)/0.18)]">
+              <button
+                type="button"
+                disabled={explaining}
+                onClick={() => {
+                  setMore(false);
+                  void explain();
+                }}
+                className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-start text-[14px] font-medium text-primary transition-colors hover:bg-primary/[0.07] disabled:opacity-60"
+              >
+                <span className="contents">
+                  {explaining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                </span>
+                {tx("Explain with AI")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMore(false);
+                  onAct(msg, folder === "spam" ? "inbox" : "spam");
+                }}
+                className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-start text-[14px] font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.05]"
+              >
+                <span className="contents">
+                  <Inbox className="h-4 w-4" />
+                </span>
+                {tx(folder === "spam" ? "Not spam" : "Mark as spam")}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </Sheet>
   );
@@ -696,68 +765,97 @@ function Composer({
 
   return (
     <Sheet onClose={onClose}>
-      <div className="flex items-center gap-2 border-b border-foreground/[0.08] px-4 py-3">
-        <button
-          type="button"
-          aria-label={tx("Close")}
-          onClick={onClose}
-          className="grid h-10 w-10 place-items-center rounded-full border border-foreground/10 bg-foreground/[0.04] text-foreground/60 transition-colors hover:bg-foreground/[0.08]"
-        >
-          <span className="contents">
-            <X className="h-4 w-4" />
-          </span>
-        </button>
-        <h2 className="flex-1 text-[15px] font-semibold">{tx("New message")}</h2>
-        <button
-          type="button"
-          disabled={busy || !to.trim()}
-          onClick={() => void submit()}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-[13.5px] font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
-        >
-          <span className="contents">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 rtl:rotate-180" />}
-          </span>
-          <span>{tx("Send")}</span>
-        </button>
+      <div className="px-3 pt-3">
+        <IosHeader
+          left={
+            <RoundBtn label={tx("Close")} onClick={onClose}>
+              <ArrowLeft className="h-[18px] w-[18px] rtl:rotate-180" />
+            </RoundBtn>
+          }
+          title={
+            <PillTitle>
+              <span className="truncate">{tx("Compose")}</span>
+            </PillTitle>
+          }
+          right={
+            <RoundBtn label={tx("New message")}>
+              <SquarePen className="h-[18px] w-[18px]" />
+            </RoundBtn>
+          }
+        />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-        <div className="flex items-center gap-3 border-b border-foreground/[0.07] py-2.5">
-          <span className="w-16 shrink-0 text-[12px] font-medium uppercase tracking-wide text-foreground/35">
-            {tx("From")}
-          </span>
-          <span className="min-w-0 truncate text-[13.5px] text-foreground/70" dir="ltr">
-            {from}
-          </span>
+      {/* Recipients card */}
+      <div className="px-4 pt-3">
+        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          <div className="flex items-center gap-2 px-4">
+            <span className="shrink-0 text-[14px] font-semibold">{tx("To")}:</span>
+            <Input
+              dir="ltr"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              placeholder="name@example.com"
+              className="h-12 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+            />
+          </div>
+          <div className="h-px bg-foreground/[0.06]" />
+          <div className="flex items-center gap-2 px-4">
+            <span className="shrink-0 text-[14px] font-semibold">{tx("Subject")}:</span>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="h-12 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-3 border-b border-foreground/[0.07] py-1">
-          <span className="w-16 shrink-0 text-[12px] font-medium uppercase tracking-wide text-foreground/35">
-            {tx("To")}
-          </span>
-          <Input
-            dir="ltr"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="h-10 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+        <p className="mt-2 px-2 text-[11.5px] text-foreground/40" dir="ltr">
+          {from}
+        </p>
+      </div>
+
+      {/* Body card with iOS toolbar */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-3">
+        <div className="flex min-h-[320px] flex-col rounded-[22px] bg-card p-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          <Textarea
+            rows={10}
+            placeholder={tx("Write your message…")}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="min-h-[200px] flex-1 resize-none border-0 bg-transparent px-0 text-[15px] leading-relaxed shadow-none focus-visible:ring-0"
           />
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center gap-0 rounded-full bg-foreground/[0.04] px-1 py-1 text-foreground/65">
+              <span className="grid h-9 w-9 place-items-center rounded-full">
+                <span className="contents">
+                  <Paperclip className="h-[17px] w-[17px]" />
+                </span>
+              </span>
+              <span className="h-5 w-px bg-foreground/10" />
+              <span className="grid h-9 w-9 place-items-center rounded-full">
+                <span className="contents">
+                  <TypeIcon className="h-[17px] w-[17px]" />
+                </span>
+              </span>
+              <span className="h-5 w-px bg-foreground/10" />
+              <span className="grid h-9 w-9 place-items-center rounded-full">
+                <span className="contents">
+                  <PenLine className="h-[17px] w-[17px]" />
+                </span>
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={busy || !to.trim()}
+              onClick={() => void submit()}
+              aria-label={tx("Send")}
+              className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 disabled:opacity-40"
+            >
+              <span className="contents">
+                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 rtl:rotate-180" />}
+              </span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3 border-b border-foreground/[0.07] py-1">
-          <span className="w-16 shrink-0 text-[12px] font-medium uppercase tracking-wide text-foreground/35">
-            {tx("Subject")}
-          </span>
-          <Input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className="h-10 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
-          />
-        </div>
-        <Textarea
-          rows={12}
-          placeholder={tx("Write your message…")}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="mt-3 resize-none border-0 bg-transparent px-0 text-[15px] leading-relaxed shadow-none focus-visible:ring-0"
-        />
       </div>
     </Sheet>
   );
