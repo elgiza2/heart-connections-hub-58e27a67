@@ -319,9 +319,9 @@ export default function MailPage() {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  
+  const folderLabel = FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox";
 
-  /* ── Header: refresh / your address pill (tap to copy) / search ── */
+  /* ── Header: refresh / folder title / search — one unified glass pill ── */
   const Header = (
     <IosHeader
       left={
@@ -330,12 +330,33 @@ export default function MailPage() {
         </RoundBtn>
       }
       title={
+        <HeaderTitle>
+          <span className="truncate">{tx(folderLabel)}</span>
+          {unread > 0 && folder === "inbox" && (
+            <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-primary">
+              {unread}
+            </span>
+          )}
+        </HeaderTitle>
+      }
+      right={
+        <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
+          {searching ? <X className="h-[18px] w-[18px]" /> : <SearchIcon className="h-[18px] w-[18px]" />}
+        </RoundBtn>
+      }
+    />
+  );
+
+  /* ── Address chip (tap to copy) + optional search field ── */
+  const Meta = (
+    <div className="mt-2.5 space-y-2.5">
+      <div className="flex justify-center">
         <button
           type="button"
           onClick={copyAddress}
           aria-label={tx("Copy address")}
           style={{ borderRadius: 9999 }}
-          className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 px-1 py-2 text-[14px] font-semibold transition-opacity active:opacity-60"
+          className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-white/40 bg-card/60 px-3 py-1.5 text-[12.5px] font-medium text-foreground/70 backdrop-blur-xl transition-opacity active:opacity-60 dark:border-white/10"
         >
           <span className="truncate" dir="ltr">
             {box?.address ?? "…"}
@@ -348,20 +369,10 @@ export default function MailPage() {
             )}
           </span>
         </button>
-      }
-      right={
-        <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
-          {searching ? <X className="h-[18px] w-[18px]" /> : <SearchIcon className="h-[18px] w-[18px]" />}
-        </RoundBtn>
-      }
-    />
-  );
+      </div>
 
-  /* ── Optional search field (address lives in the header pill) ── */
-  const Meta = (
-    <div className="mt-2 space-y-2.5">
       {searching && (
-        <div className="flex h-11 items-center gap-2.5 rounded-[20px] bg-card px-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+        <div className={`${glassCardCls} flex h-12 items-center gap-2.5 px-4`} style={{ borderRadius: 9999 }}>
           <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
           <input
             autoFocus
@@ -380,6 +391,7 @@ export default function MailPage() {
         </div>
       )}
     </div>
+
   );
 
   /* ── List: date-grouped rows on white cards ── */
