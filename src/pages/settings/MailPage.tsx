@@ -728,6 +728,17 @@ function MessageView({
         </button>
         <button
           type="button"
+          aria-label={tx("Explain with AI")}
+          disabled={explaining}
+          onClick={() => void explain()}
+          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-primary shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95 disabled:opacity-50"
+        >
+          <span className="contents">
+            {explaining ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <Sparkles className="h-[18px] w-[18px]" />}
+          </span>
+        </button>
+        <button
+          type="button"
           aria-label={tx("Forward")}
           onClick={() => onForward(msg)}
           className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
@@ -736,49 +747,16 @@ function MessageView({
             <Forward className="h-[18px] w-[18px] rtl:rotate-180" />
           </span>
         </button>
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            aria-label={tx("More")}
-            onClick={() => setMore((v) => !v)}
-            className="grid h-[52px] w-[52px] place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
-          >
-            <span className="contents">
-              <MoreHorizontal className="h-[18px] w-[18px]" />
-            </span>
-          </button>
-          {more && (
-            <div className="absolute bottom-[60px] end-0 w-56 overflow-hidden rounded-[18px] bg-card p-1 shadow-[0_12px_36px_hsl(var(--foreground)/0.18)]">
-              <button
-                type="button"
-                disabled={explaining}
-                onClick={() => {
-                  setMore(false);
-                  void explain();
-                }}
-                className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-start text-[14px] font-medium text-primary transition-colors hover:bg-primary/[0.07] disabled:opacity-60"
-              >
-                <span className="contents">
-                  {explaining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                </span>
-                {tx("Explain with AI")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMore(false);
-                  onAct(msg, folder === "spam" ? "inbox" : "spam");
-                }}
-                className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-start text-[14px] font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.05]"
-              >
-                <span className="contents">
-                  <Inbox className="h-4 w-4" />
-                </span>
-                {tx(folder === "spam" ? "Not spam" : "Mark as spam")}
-              </button>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          aria-label={tx(folder === "spam" ? "Not spam" : "Mark as spam")}
+          onClick={() => onAct(msg, folder === "spam" ? "inbox" : "spam")}
+          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+        >
+          <span className="contents">
+            <Inbox className="h-[18px] w-[18px]" />
+          </span>
+        </button>
       </div>
     </Sheet>
   );
