@@ -381,29 +381,42 @@ export default function MailPage() {
                   <button
                     key={m.id}
                     onClick={() => void openMessage(m)}
-                    className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors hover:bg-foreground/[0.03]"
+                    className={`flex w-full items-center gap-3 px-4 py-3.5 text-start transition-all hover:bg-foreground/[0.03] ${
+                      m.is_read ? "opacity-55" : ""
+                    }`}
                   >
-                    <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-foreground/[0.07] text-[12px] font-bold text-foreground/70">
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[12px] font-bold ${
+                        m.is_read
+                          ? "bg-foreground/[0.05] text-foreground/50"
+                          : "bg-primary/10 text-primary"
+                      }`}
+                    >
                       {initials(who)}
-                      {!m.is_read && (
-                        <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-primary" />
-                      )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span
                           className={`min-w-0 flex-1 truncate text-[15px] ${
-                            m.is_read ? "font-medium text-foreground/75" : "font-bold text-foreground"
+                            m.is_read ? "font-medium text-foreground/70" : "font-bold text-foreground"
                           }`}
                         >
                           {who}
                         </span>
                         {m.origin === "ai" && <Bot className="h-3.5 w-3.5 shrink-0 text-foreground/35" />}
-                        <span className="shrink-0 text-[12px] tabular-nums text-foreground/40">
+                        <span
+                          className={`shrink-0 text-[12px] tabular-nums ${
+                            m.is_read ? "text-foreground/35" : "font-semibold text-primary"
+                          }`}
+                        >
                           {fmtDate(m.created_at)}
                         </span>
                       </span>
-                      <span className="mt-0.5 block truncate text-[13.5px] text-foreground/45">
+                      <span
+                        className={`mt-0.5 block truncate text-[13.5px] ${
+                          m.is_read ? "text-foreground/40" : "font-medium text-foreground/65"
+                        }`}
+                      >
                         {m.snippet || m.subject || tx("(no subject)")}
                       </span>
                     </span>
@@ -418,7 +431,7 @@ export default function MailPage() {
   );
 
   const Body = (
-    <section className="-mx-1 pb-32">
+    <section className="-mx-1 -mt-3 pb-32">
       {Header}
       {Meta}
       {List}
