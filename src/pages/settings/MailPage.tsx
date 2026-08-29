@@ -113,6 +113,8 @@ function RoundBtn({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
+      // Settings pages force a 16px radius on buttons; keep these perfectly round.
+      style={{ borderRadius: 9999 }}
       className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-all active:scale-95 disabled:opacity-40 ${
         tone === "accent"
           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
