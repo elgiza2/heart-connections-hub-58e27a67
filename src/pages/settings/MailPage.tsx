@@ -436,8 +436,8 @@ export default function MailPage() {
       {Meta}
       {List}
 
-      {/* iOS floating tab dock + compose FAB — portalled so page transforms
-          in the settings shell can't break `position: fixed`. */}
+      {/* iOS 26-style liquid glass tab dock + compose FAB — portalled so page
+          transforms in the settings shell can't break `position: fixed`. */}
       {createPortal(
         <div
           className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4"
@@ -445,7 +445,7 @@ export default function MailPage() {
         >
           <div className="pointer-events-auto flex items-center gap-2">
             <div
-              className="flex items-center gap-1 bg-card/95 p-1.5 shadow-[0_10px_34px_hsl(var(--foreground)/0.16)] backdrop-blur"
+              className="relative flex items-center gap-1 border border-white/40 bg-card/55 p-1.5 shadow-[0_18px_44px_-12px_hsl(var(--foreground)/0.28),inset_0_1px_0_hsl(0_0%_100%/0.5)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10"
               style={{ borderRadius: 9999 }}
             >
               {FOLDERS.map((f) => {
@@ -455,14 +455,23 @@ export default function MailPage() {
                     key={f.key}
                     onClick={() => setFolder(f.key)}
                     style={{ borderRadius: 9999 }}
-                    className={`px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                      active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
+                    className={`relative px-3.5 py-2 text-[12.5px] font-semibold transition-colors duration-200 ${
+                      active ? "text-primary-foreground" : "text-foreground/55 hover:text-foreground/85"
                     }`}
                   >
-                    {tx(f.label)}
-                    {f.key === "inbox" && unread > 0 && (
-                      <span className="ms-1.5 tabular-nums opacity-70">{unread}</span>
+                    {active && (
+                      <motion.span
+                        layoutId="mail-dock-pill"
+                        transition={{ type: "spring", bounce: 0.32, duration: 0.55 }}
+                        className="absolute inset-0 rounded-full bg-primary shadow-[0_6px_18px_-4px_hsl(var(--primary)/0.55),inset_0_1px_0_hsl(0_0%_100%/0.35)]"
+                      />
                     )}
+                    <span className="relative z-10">
+                      {tx(f.label)}
+                      {f.key === "inbox" && unread > 0 && (
+                        <span className="ms-1.5 tabular-nums opacity-75">{unread}</span>
+                      )}
+                    </span>
                   </button>
                 );
               })}
@@ -472,7 +481,7 @@ export default function MailPage() {
               aria-label={tx("Compose")}
               onClick={() => setDraft({ to: "", subject: "", text: "" })}
               style={{ borderRadius: 9999 }}
-              className="grid h-12 w-12 place-items-center bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+              className="grid h-12 w-12 place-items-center border border-white/30 bg-primary/90 text-primary-foreground shadow-[0_14px_30px_-8px_hsl(var(--primary)/0.6),inset_0_1px_0_hsl(0_0%_100%/0.35)] backdrop-blur-xl transition-transform active:scale-90"
             >
               <span className="contents">
                 <Plus className="h-5 w-5" />
