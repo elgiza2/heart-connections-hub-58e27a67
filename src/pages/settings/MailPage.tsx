@@ -1,4 +1,5 @@
 /** @doc Megsy Mail — iOS-style mail client: floating pill headers, soft cards, grouped list, reader & composer sheets. */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +12,7 @@ import {
   Forward,
   Inbox,
   Loader2,
-  MoreHorizontal,
+  
   Paperclip,
   PenLine,
   Plus,
@@ -24,6 +25,7 @@ import {
   Type as TypeIcon,
   X,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DesktopSettingsLayout from "@/components/settings/DesktopSettingsLayout";
@@ -273,9 +275,9 @@ export default function MailPage() {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  const activeFolder = FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox";
+  
 
-  /* ── Header: ••• / folder pill / search ── */
+  /* ── Header: refresh / your address pill (tap to copy) / search ── */
   const Header = (
     <IosHeader
       left={
@@ -284,10 +286,27 @@ export default function MailPage() {
         </RoundBtn>
       }
       title={
-        <PillTitle>
-          {unread > 0 && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
-          <span className="truncate">{tx(activeFolder)}</span>
-        </PillTitle>
+        <button
+          type="button"
+          onClick={copyAddress}
+          aria-label={tx("Copy address")}
+          style={{ borderRadius: 9999 }}
+          className="mx-auto flex max-w-full items-center gap-2 rounded-full bg-card px-4 py-2.5 text-[13.5px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+        >
+          <span className="contents">
+            <Inbox className="h-4 w-4 shrink-0 text-foreground/45" />
+          </span>
+          <span className="truncate" dir="ltr">
+            {box?.address ?? "…"}
+          </span>
+          <span className="contents">
+            {copied ? (
+              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
+            )}
+          </span>
+        </button>
       }
       right={
         <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
@@ -297,33 +316,9 @@ export default function MailPage() {
     />
   );
 
-  /* ── Address card + optional search field ── */
+  /* ── Optional search field (address lives in the header pill) ── */
   const Meta = (
-    <div className="mt-3 space-y-2.5">
-      <button
-        type="button"
-        onClick={copyAddress}
-        className="flex w-full items-center gap-3 rounded-[20px] bg-card px-4 py-3 text-start shadow-[0_1px_3px_hsl(var(--foreground)/0.07)] transition-transform active:scale-[0.99]"
-        aria-label={tx("Copy address")}
-      >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/[0.06] text-foreground/60">
-          <span className="contents">
-            <Inbox className="h-[17px] w-[17px]" />
-          </span>
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-medium uppercase tracking-wide text-foreground/40">
-            {tx("Your Megsy address")}
-          </span>
-          <span className="block truncate text-[14px] font-semibold" dir="ltr">
-            {box?.address ?? "…"}
-          </span>
-        </span>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/[0.05] text-foreground/55">
-          <span className="contents">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</span>
-        </span>
-      </button>
-
+    <div className="mt-2 space-y-2.5">
       {searching && (
         <div className="flex h-11 items-center gap-2.5 rounded-[20px] bg-card px-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
           <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
@@ -386,29 +381,42 @@ export default function MailPage() {
                   <button
                     key={m.id}
                     onClick={() => void openMessage(m)}
-                    className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition-colors hover:bg-foreground/[0.03]"
+                    className={`flex w-full items-center gap-3 px-4 py-3.5 text-start transition-all hover:bg-foreground/[0.03] ${
+                      m.is_read ? "opacity-55" : ""
+                    }`}
                   >
-                    <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-foreground/[0.07] text-[12px] font-bold text-foreground/70">
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[12px] font-bold ${
+                        m.is_read
+                          ? "bg-foreground/[0.05] text-foreground/50"
+                          : "bg-primary/10 text-primary"
+                      }`}
+                    >
                       {initials(who)}
-                      {!m.is_read && (
-                        <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-primary" />
-                      )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span
                           className={`min-w-0 flex-1 truncate text-[15px] ${
-                            m.is_read ? "font-medium text-foreground/75" : "font-bold text-foreground"
+                            m.is_read ? "font-medium text-foreground/70" : "font-bold text-foreground"
                           }`}
                         >
                           {who}
                         </span>
                         {m.origin === "ai" && <Bot className="h-3.5 w-3.5 shrink-0 text-foreground/35" />}
-                        <span className="shrink-0 text-[12px] tabular-nums text-foreground/40">
+                        <span
+                          className={`shrink-0 text-[12px] tabular-nums ${
+                            m.is_read ? "text-foreground/35" : "font-semibold text-primary"
+                          }`}
+                        >
                           {fmtDate(m.created_at)}
                         </span>
                       </span>
-                      <span className="mt-0.5 block truncate text-[13.5px] text-foreground/45">
+                      <span
+                        className={`mt-0.5 block truncate text-[13.5px] ${
+                          m.is_read ? "text-foreground/40" : "font-medium text-foreground/65"
+                        }`}
+                      >
                         {m.snippet || m.subject || tx("(no subject)")}
                       </span>
                     </span>
@@ -423,13 +431,13 @@ export default function MailPage() {
   );
 
   const Body = (
-    <section className="-mx-1 pb-32">
+    <section className="-mx-1 -mt-3 pb-32">
       {Header}
       {Meta}
       {List}
 
-      {/* iOS floating tab dock + compose FAB — portalled so page transforms
-          in the settings shell can't break `position: fixed`. */}
+      {/* iOS 26-style liquid glass tab dock + compose FAB — portalled so page
+          transforms in the settings shell can't break `position: fixed`. */}
       {createPortal(
         <div
           className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4"
@@ -437,7 +445,7 @@ export default function MailPage() {
         >
           <div className="pointer-events-auto flex items-center gap-2">
             <div
-              className="flex items-center gap-1 bg-card/95 p-1.5 shadow-[0_10px_34px_hsl(var(--foreground)/0.16)] backdrop-blur"
+              className="relative flex items-center gap-1 border border-white/40 bg-card/55 p-1.5 shadow-[0_18px_44px_-12px_hsl(var(--foreground)/0.28),inset_0_1px_0_hsl(0_0%_100%/0.5)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10"
               style={{ borderRadius: 9999 }}
             >
               {FOLDERS.map((f) => {
@@ -447,14 +455,23 @@ export default function MailPage() {
                     key={f.key}
                     onClick={() => setFolder(f.key)}
                     style={{ borderRadius: 9999 }}
-                    className={`px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                      active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
+                    className={`relative px-3.5 py-2 text-[12.5px] font-semibold transition-colors duration-200 ${
+                      active ? "text-primary-foreground" : "text-foreground/55 hover:text-foreground/85"
                     }`}
                   >
-                    {tx(f.label)}
-                    {f.key === "inbox" && unread > 0 && (
-                      <span className="ms-1.5 tabular-nums opacity-70">{unread}</span>
+                    {active && (
+                      <motion.span
+                        layoutId="mail-dock-pill"
+                        transition={{ type: "spring", bounce: 0.32, duration: 0.55 }}
+                        className="absolute inset-0 rounded-full bg-primary shadow-[0_6px_18px_-4px_hsl(var(--primary)/0.55),inset_0_1px_0_hsl(0_0%_100%/0.35)]"
+                      />
                     )}
+                    <span className="relative z-10">
+                      {tx(f.label)}
+                      {f.key === "inbox" && unread > 0 && (
+                        <span className="ms-1.5 tabular-nums opacity-75">{unread}</span>
+                      )}
+                    </span>
                   </button>
                 );
               })}
@@ -464,7 +481,7 @@ export default function MailPage() {
               aria-label={tx("Compose")}
               onClick={() => setDraft({ to: "", subject: "", text: "" })}
               style={{ borderRadius: 9999 }}
-              className="grid h-12 w-12 place-items-center bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+              className="grid h-12 w-12 place-items-center border border-white/30 bg-primary/90 text-primary-foreground shadow-[0_14px_30px_-8px_hsl(var(--primary)/0.6),inset_0_1px_0_hsl(0_0%_100%/0.35)] backdrop-blur-xl transition-transform active:scale-90"
             >
               <span className="contents">
                 <Plus className="h-5 w-5" />
@@ -602,7 +619,6 @@ function MessageView({
 }) {
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
-  const [more, setMore] = useState(false);
 
   const explain = async () => {
     setExplaining(true);
@@ -711,6 +727,17 @@ function MessageView({
         </button>
         <button
           type="button"
+          aria-label={tx("Explain with AI")}
+          disabled={explaining}
+          onClick={() => void explain()}
+          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-primary shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95 disabled:opacity-50"
+        >
+          <span className="contents">
+            {explaining ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <Sparkles className="h-[18px] w-[18px]" />}
+          </span>
+        </button>
+        <button
+          type="button"
           aria-label={tx("Forward")}
           onClick={() => onForward(msg)}
           className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
@@ -719,49 +746,16 @@ function MessageView({
             <Forward className="h-[18px] w-[18px] rtl:rotate-180" />
           </span>
         </button>
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            aria-label={tx("More")}
-            onClick={() => setMore((v) => !v)}
-            className="grid h-[52px] w-[52px] place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
-          >
-            <span className="contents">
-              <MoreHorizontal className="h-[18px] w-[18px]" />
-            </span>
-          </button>
-          {more && (
-            <div className="absolute bottom-[60px] end-0 w-56 overflow-hidden rounded-[18px] bg-card p-1 shadow-[0_12px_36px_hsl(var(--foreground)/0.18)]">
-              <button
-                type="button"
-                disabled={explaining}
-                onClick={() => {
-                  setMore(false);
-                  void explain();
-                }}
-                className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-start text-[14px] font-medium text-primary transition-colors hover:bg-primary/[0.07] disabled:opacity-60"
-              >
-                <span className="contents">
-                  {explaining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                </span>
-                {tx("Explain with AI")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMore(false);
-                  onAct(msg, folder === "spam" ? "inbox" : "spam");
-                }}
-                className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-start text-[14px] font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.05]"
-              >
-                <span className="contents">
-                  <Inbox className="h-4 w-4" />
-                </span>
-                {tx(folder === "spam" ? "Not spam" : "Mark as spam")}
-              </button>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          aria-label={tx(folder === "spam" ? "Not spam" : "Mark as spam")}
+          onClick={() => onAct(msg, folder === "spam" ? "inbox" : "spam")}
+          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+        >
+          <span className="contents">
+            <Inbox className="h-[18px] w-[18px]" />
+          </span>
+        </button>
       </div>
     </Sheet>
   );
