@@ -492,6 +492,7 @@ export const EGYPTIAN_PAGES_2: Record<string, string> = {
   "Search email": "دوّر في البريد",
   "Clear": "مسح",
   "Compose": "اكتب رسالة",
+  "Yesterday": "إمبارح",
   "Megsy Mail": "بريد Megsy",
   
   "Today": "النهارده",
