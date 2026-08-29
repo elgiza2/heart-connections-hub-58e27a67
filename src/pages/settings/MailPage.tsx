@@ -398,7 +398,7 @@ export default function MailPage() {
   const List = (
     <div className="mt-4">
       {loading && (
-        <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+        <div className={glassCardCls}>
           {[0, 1, 2, 3, 4].map((i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-3.5">
               <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-foreground/[0.07]" />
@@ -426,7 +426,7 @@ export default function MailPage() {
         groups.map((g) => (
           <section key={g.label} className="mb-4">
             <p className="mb-1.5 px-2 text-[13px] font-semibold text-foreground/45">{tx(g.label)}</p>
-            <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+            <div className={glassCardCls}>
               {g.rows.map((m, i) => {
                 const addr = folder === "sent" ? m.to_address : m.from_address;
                 const who = displayName(folder === "sent" ? null : m.from_name, addr);
@@ -721,14 +721,14 @@ function MessageView({
 
       {/* Subject / To card */}
       <div className="px-4 pt-3">
-        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+        <div className={glassCardCls}>
           <div className="flex gap-2 px-4 py-3">
             <span className="shrink-0 text-[14px] font-semibold">{tx("Subject")}:</span>
             <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75">
               {msg.subject || tx("(no subject)")}
             </span>
           </div>
-          <div className="h-px bg-foreground/[0.06]" />
+          <div className={hairline} />
           <div className="flex items-center gap-2 px-4 py-3">
             <span className="shrink-0 text-[14px] font-semibold">{tx("From")}:</span>
             <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75" dir="ltr">
@@ -861,7 +861,7 @@ function Composer({
 
       {/* Recipients card */}
       <div className="px-4 pt-3">
-        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+        <div className={glassCardCls}>
           <div className="flex items-center gap-2 px-4">
             <span className="shrink-0 text-[14px] font-semibold">{tx("To")}:</span>
             <Input
@@ -872,7 +872,7 @@ function Composer({
               className="h-12 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
             />
           </div>
-          <div className="h-px bg-foreground/[0.06]" />
+          <div className={hairline} />
           <div className="flex items-center gap-2 px-4">
             <span className="shrink-0 text-[14px] font-semibold">{tx("Subject")}:</span>
             <Input
