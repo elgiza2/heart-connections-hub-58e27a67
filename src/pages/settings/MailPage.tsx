@@ -179,15 +179,28 @@ export default function MailPage() {
     };
   }, []);
 
+  /**
+   * Paint the stored messages first, then fetch new mail in the background —
+   * IMAP polling takes seconds and must never block the list from rendering.
+   */
   const refresh = useCallback(async (f: MailFolder) => {
     setLoading(true);
     try {
-      if (f === "inbox" || f === "spam") await pollInbox();
       setItems(await listMail(f));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+    }
+    if (f !== "inbox" && f !== "spam") return;
+    setSyncing(true);
+    try {
+      await pollInbox();
+      setItems(await listMail(f));
+    } catch {
+      /* background sync failures stay silent */
+    } finally {
+      setSyncing(false);
     }
   }, []);
 
