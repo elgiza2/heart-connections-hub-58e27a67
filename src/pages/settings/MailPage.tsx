@@ -280,7 +280,7 @@ export default function MailPage() {
     <IosHeader
       left={
         <RoundBtn label={tx("Refresh")} onClick={() => void refresh(folder)}>
-          {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <RefreshCw className="h-[18px] w-[18px]" />}
+          <RefreshCw className={`h-[18px] w-[18px] ${loading || syncing ? "animate-spin" : ""}`} />
         </RoundBtn>
       }
       title={
