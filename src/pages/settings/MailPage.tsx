@@ -315,33 +315,9 @@ export default function MailPage() {
     />
   );
 
-  /* ── Address card + optional search field ── */
+  /* ── Optional search field (address lives in the header pill) ── */
   const Meta = (
-    <div className="mt-3 space-y-2.5">
-      <button
-        type="button"
-        onClick={copyAddress}
-        className="flex w-full items-center gap-3 rounded-[20px] bg-card px-4 py-3 text-start shadow-[0_1px_3px_hsl(var(--foreground)/0.07)] transition-transform active:scale-[0.99]"
-        aria-label={tx("Copy address")}
-      >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/[0.06] text-foreground/60">
-          <span className="contents">
-            <Inbox className="h-[17px] w-[17px]" />
-          </span>
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-medium uppercase tracking-wide text-foreground/40">
-            {tx("Your Megsy address")}
-          </span>
-          <span className="block truncate text-[14px] font-semibold" dir="ltr">
-            {box?.address ?? "…"}
-          </span>
-        </span>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/[0.05] text-foreground/55">
-          <span className="contents">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</span>
-        </span>
-      </button>
-
+    <div className="mt-2 space-y-2.5">
       {searching && (
         <div className="flex h-11 items-center gap-2.5 rounded-[20px] bg-card px-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
           <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
