@@ -656,14 +656,12 @@ function MessageView({
             </RoundBtn>
           }
           title={
-            <PillTitle>
+            <HeaderTitle>
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-[10px] font-bold text-foreground/70">
                 {initials(who)}
               </span>
-              <span className="truncate" dir="ltr">
-                {who}
-              </span>
-            </PillTitle>
+              <span className="truncate">{who}</span>
+            </HeaderTitle>
           }
           right={
             <RoundBtn
