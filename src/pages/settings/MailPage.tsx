@@ -12,7 +12,7 @@ import {
   Forward,
   Inbox,
   Loader2,
-  MoreHorizontal,
+  
   Paperclip,
   PenLine,
   Plus,
@@ -275,7 +275,7 @@ export default function MailPage() {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  const activeFolder = FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox";
+  
 
   /* ── Header: refresh / your address pill (tap to copy) / search ── */
   const Header = (
@@ -619,7 +619,6 @@ function MessageView({
 }) {
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
-  const [more, setMore] = useState(false);
 
   const explain = async () => {
     setExplaining(true);
