@@ -350,8 +350,16 @@ export default function MailPage() {
   const List = (
     <div className="mt-4">
       {loading && (
-        <div className="grid place-items-center py-20 text-foreground/40">
-          <Loader2 className="h-5 w-5 animate-spin" />
+        <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+              <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-foreground/[0.07]" />
+              <span className="min-w-0 flex-1 space-y-2">
+                <span className="block h-3 w-1/3 animate-pulse rounded-full bg-foreground/[0.07]" />
+                <span className="block h-3 w-3/4 animate-pulse rounded-full bg-foreground/[0.05]" />
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
