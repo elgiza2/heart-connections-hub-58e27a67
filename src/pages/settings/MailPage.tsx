@@ -93,9 +93,13 @@ function bucketOf(iso: string): "Today" | "Yesterday" | "This week" | "Earlier" 
   return "Earlier";
 }
 
-/* ── iOS-style shared primitives ───────────────────────────────── */
+/* ── iOS 26 liquid-glass shared primitives ─────────────────────── */
 
-/** Circular floating control used in every mail header. */
+/** Liquid-glass surface used by every header bar and action bar. */
+const glassBarCls =
+  "border border-white/40 bg-card/60 shadow-[0_18px_44px_-14px_hsl(var(--foreground)/0.25),inset_0_1px_0_hsl(0_0%_100%/0.5)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10";
+
+/** Circular control that lives inside a glass bar. */
 function RoundBtn({
   label,
   onClick,
@@ -117,10 +121,10 @@ function RoundBtn({
       disabled={disabled}
       // Settings pages force a 16px radius on buttons; keep these perfectly round.
       style={{ borderRadius: 9999 }}
-      className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-all active:scale-95 disabled:opacity-40 ${
+      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-all active:scale-90 disabled:opacity-40 ${
         tone === "accent"
-          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-          : "bg-card text-foreground/75 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] hover:text-foreground"
+          ? "bg-primary text-primary-foreground shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.6),inset_0_1px_0_hsl(0_0%_100%/0.35)]"
+          : "bg-foreground/[0.06] text-foreground/70 hover:bg-foreground/[0.1] hover:text-foreground"
       }`}
     >
       <span className="contents">{children}</span>
@@ -128,15 +132,16 @@ function RoundBtn({
   );
 }
 
-/** Centered pill title of the iOS header. */
-function PillTitle({ children }: { children: React.ReactNode }) {
+/** Centered title inside a glass header bar. */
+function HeaderTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex max-w-[62%] items-center gap-2 truncate rounded-full bg-card px-5 py-2.5 text-[15px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)]">
+    <span className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 truncate px-1 text-[14.5px] font-semibold">
       {children}
-    </div>
+    </span>
   );
 }
 
+/** iOS 26 liquid-glass navigation bar — one unified pill for every mail screen. */
 function IosHeader({
   left,
   title,
@@ -147,11 +152,17 @@ function IosHeader({
   right: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 px-1 py-1">
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+      className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
+      style={{ borderRadius: 9999 }}
+    >
       {left}
-      <div className="min-w-0 flex-1">{title}</div>
+      <div className="min-w-0 flex-1 text-center">{title}</div>
       {right}
-    </div>
+    </motion.div>
   );
 }
 
@@ -291,11 +302,8 @@ export default function MailPage() {
           onClick={copyAddress}
           aria-label={tx("Copy address")}
           style={{ borderRadius: 9999 }}
-          className="mx-auto flex max-w-full items-center gap-2 rounded-full bg-card px-4 py-2.5 text-[13.5px] font-semibold shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
+          className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 px-1 py-2 text-[14px] font-semibold transition-opacity active:opacity-60"
         >
-          <span className="contents">
-            <Inbox className="h-4 w-4 shrink-0 text-foreground/45" />
-          </span>
           <span className="truncate" dir="ltr">
             {box?.address ?? "…"}
           </span>
@@ -648,14 +656,12 @@ function MessageView({
             </RoundBtn>
           }
           title={
-            <PillTitle>
+            <HeaderTitle>
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-[10px] font-bold text-foreground/70">
                 {initials(who)}
               </span>
-              <span className="truncate" dir="ltr">
-                {who}
-              </span>
-            </PillTitle>
+              <span className="truncate">{who}</span>
+            </HeaderTitle>
           }
           right={
             <RoundBtn
@@ -713,49 +719,39 @@ function MessageView({
         </div>
       </div>
 
-      {/* iOS action bar: big Reply pill + circular actions */}
-      <div className="flex items-center gap-2.5 px-4 pb-5 pt-1">
-        <button
-          type="button"
-          onClick={() => onReply(msg)}
-          className="inline-flex h-13 min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-primary text-[16px] font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-[0.98]"
+      {/* iOS 26 liquid-glass action bar: Reply pill + circular actions in one glass container */}
+      <div className="px-3 pb-4 pt-1">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", bounce: 0.25, duration: 0.5, delay: 0.05 }}
+          className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
+          style={{ borderRadius: 9999 }}
         >
-          <span className="contents">
-            <CornerUpLeft className="h-[18px] w-[18px] rtl:rotate-180" />
-          </span>
-          {tx("Reply")}
-        </button>
-        <button
-          type="button"
-          aria-label={tx("Explain with AI")}
-          disabled={explaining}
-          onClick={() => void explain()}
-          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-primary shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95 disabled:opacity-50"
-        >
-          <span className="contents">
-            {explaining ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <Sparkles className="h-[18px] w-[18px]" />}
-          </span>
-        </button>
-        <button
-          type="button"
-          aria-label={tx("Forward")}
-          onClick={() => onForward(msg)}
-          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
-        >
-          <span className="contents">
-            <Forward className="h-[18px] w-[18px] rtl:rotate-180" />
-          </span>
-        </button>
-        <button
-          type="button"
-          aria-label={tx(folder === "spam" ? "Not spam" : "Mark as spam")}
-          onClick={() => onAct(msg, folder === "spam" ? "inbox" : "spam")}
-          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-card text-foreground/70 shadow-[0_1px_3px_hsl(var(--foreground)/0.08)] transition-transform active:scale-95"
-        >
-          <span className="contents">
-            <Inbox className="h-[18px] w-[18px]" />
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => onReply(msg)}
+            style={{ borderRadius: 9999 }}
+            className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary text-[15px] font-semibold text-primary-foreground shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.6),inset_0_1px_0_hsl(0_0%_100%/0.35)] transition-transform active:scale-[0.97]"
+          >
+            <span className="contents">
+              <CornerUpLeft className="h-[17px] w-[17px] rtl:rotate-180" />
+            </span>
+            {tx("Reply")}
+          </button>
+          <RoundBtn label={tx("Explain with AI")} disabled={explaining} onClick={() => void explain()}>
+            {explaining ? <Loader2 className="h-[17px] w-[17px] animate-spin" /> : <Sparkles className="h-[17px] w-[17px] text-primary" />}
+          </RoundBtn>
+          <RoundBtn label={tx("Forward")} onClick={() => onForward(msg)}>
+            <Forward className="h-[17px] w-[17px] rtl:rotate-180" />
+          </RoundBtn>
+          <RoundBtn
+            label={tx(folder === "spam" ? "Not spam" : "Mark as spam")}
+            onClick={() => onAct(msg, folder === "spam" ? "inbox" : "spam")}
+          >
+            <Inbox className="h-[17px] w-[17px]" />
+          </RoundBtn>
+        </motion.div>
       </div>
     </Sheet>
   );
@@ -806,9 +802,9 @@ function Composer({
             </RoundBtn>
           }
           title={
-            <PillTitle>
+            <HeaderTitle>
               <span className="truncate">{tx("Compose")}</span>
-            </PillTitle>
+            </HeaderTitle>
           }
           right={
             <RoundBtn label={tx("New message")}>
