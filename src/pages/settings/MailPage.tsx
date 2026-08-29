@@ -113,6 +113,8 @@ function RoundBtn({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
+      // Settings pages force a 16px radius on buttons; keep these perfectly round.
+      style={{ borderRadius: 9999 }}
       className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-all active:scale-95 disabled:opacity-40 ${
         tone === "accent"
           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
@@ -161,6 +163,7 @@ export default function MailPage() {
   const [folder, setFolder] = useState<MailFolder>("inbox");
   const [items, setItems] = useState<MailMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [open, setOpen] = useState<MailMessage | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [query, setQuery] = useState("");
@@ -177,15 +180,28 @@ export default function MailPage() {
     };
   }, []);
 
+  /**
+   * Paint the stored messages first, then fetch new mail in the background —
+   * IMAP polling takes seconds and must never block the list from rendering.
+   */
   const refresh = useCallback(async (f: MailFolder) => {
     setLoading(true);
     try {
-      if (f === "inbox" || f === "spam") await pollInbox();
       setItems(await listMail(f));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+    }
+    if (f !== "inbox" && f !== "spam") return;
+    setSyncing(true);
+    try {
+      await pollInbox();
+      setItems(await listMail(f));
+    } catch {
+      /* background sync failures stay silent */
+    } finally {
+      setSyncing(false);
     }
   }, []);
 
@@ -264,7 +280,7 @@ export default function MailPage() {
     <IosHeader
       left={
         <RoundBtn label={tx("Refresh")} onClick={() => void refresh(folder)}>
-          {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <RefreshCw className="h-[18px] w-[18px]" />}
+          <RefreshCw className={`h-[18px] w-[18px] ${loading || syncing ? "animate-spin" : ""}`} />
         </RoundBtn>
       }
       title={
@@ -334,8 +350,16 @@ export default function MailPage() {
   const List = (
     <div className="mt-4">
       {loading && (
-        <div className="grid place-items-center py-20 text-foreground/40">
-          <Loader2 className="h-5 w-5 animate-spin" />
+        <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+              <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-foreground/[0.07]" />
+              <span className="min-w-0 flex-1 space-y-2">
+                <span className="block h-3 w-1/3 animate-pulse rounded-full bg-foreground/[0.07]" />
+                <span className="block h-3 w-3/4 animate-pulse rounded-full bg-foreground/[0.05]" />
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -404,37 +428,52 @@ export default function MailPage() {
       {Meta}
       {List}
 
-      {/* iOS floating tab dock + compose FAB */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 flex justify-center px-4 md:bottom-8">
-        <div className="pointer-events-auto flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-full bg-card/95 p-1.5 shadow-[0_8px_28px_hsl(var(--foreground)/0.14)] backdrop-blur">
-            {FOLDERS.map((f) => {
-              const active = folder === f.key;
-              return (
-                <button
-                  key={f.key}
-                  onClick={() => setFolder(f.key)}
-                  className={`rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                    active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
-                  }`}
-                >
-                  {tx(f.label)}
-                </button>
-              );
-            })}
+      {/* iOS floating tab dock + compose FAB — portalled so page transforms
+          in the settings shell can't break `position: fixed`. */}
+      {createPortal(
+        <div
+          className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4"
+          style={{ bottom: "calc(20px + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="pointer-events-auto flex items-center gap-2">
+            <div
+              className="flex items-center gap-1 bg-card/95 p-1.5 shadow-[0_10px_34px_hsl(var(--foreground)/0.16)] backdrop-blur"
+              style={{ borderRadius: 9999 }}
+            >
+              {FOLDERS.map((f) => {
+                const active = folder === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setFolder(f.key)}
+                    style={{ borderRadius: 9999 }}
+                    className={`px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+                      active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
+                    }`}
+                  >
+                    {tx(f.label)}
+                    {f.key === "inbox" && unread > 0 && (
+                      <span className="ms-1.5 tabular-nums opacity-70">{unread}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              aria-label={tx("Compose")}
+              onClick={() => setDraft({ to: "", subject: "", text: "" })}
+              style={{ borderRadius: 9999 }}
+              className="grid h-12 w-12 place-items-center bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+            >
+              <span className="contents">
+                <Plus className="h-5 w-5" />
+              </span>
+            </button>
           </div>
-          <button
-            type="button"
-            aria-label={tx("Compose")}
-            onClick={() => setDraft({ to: "", subject: "", text: "" })}
-            className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
-          >
-            <span className="contents">
-              <Plus className="h-5 w-5" />
-            </span>
-          </button>
-        </div>
-      </div>
+        </div>,
+        document.body,
+      )}
 
       {open && (
         <MessageView
