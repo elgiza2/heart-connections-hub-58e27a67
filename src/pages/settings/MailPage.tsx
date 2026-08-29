@@ -20,7 +20,6 @@ import {
   Search as SearchIcon,
   Send,
   Sparkles,
-  SquarePen,
   Trash2,
   Type as TypeIcon,
   X,
@@ -95,9 +94,16 @@ function bucketOf(iso: string): "Today" | "Yesterday" | "This week" | "Earlier" 
 
 /* ── iOS 26 liquid-glass shared primitives ─────────────────────── */
 
-/** Liquid-glass surface used by every header bar and action bar. */
+/** Liquid-glass surface used by every header bar, action bar and dock. */
 const glassBarCls =
   "border border-white/40 bg-card/60 shadow-[0_18px_44px_-14px_hsl(var(--foreground)/0.25),inset_0_1px_0_hsl(0_0%_100%/0.5)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10";
+
+/** Grouped content card — the single content surface used across all mail screens. */
+const glassCardCls =
+  "overflow-hidden rounded-[24px] border border-white/40 bg-card/70 shadow-[0_10px_30px_-18px_hsl(var(--foreground)/0.35),inset_0_1px_0_hsl(0_0%_100%/0.45)] backdrop-blur-xl dark:border-white/10";
+
+/** Hairline separator inside grouped cards. */
+const hairline = "h-px bg-foreground/[0.07]";
 
 /** Circular control that lives inside a glass bar. */
 function RoundBtn({
@@ -135,7 +141,7 @@ function RoundBtn({
 /** Centered title inside a glass header bar. */
 function HeaderTitle({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 truncate px-1 text-[14.5px] font-semibold">
+    <span className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 truncate px-1 text-[15px] font-semibold tracking-tight">
       {children}
     </span>
   );
@@ -159,12 +165,38 @@ function IosHeader({
       className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
       style={{ borderRadius: 9999 }}
     >
-      {left}
+      <div className="flex shrink-0 items-center gap-1.5">{left}</div>
       <div className="min-w-0 flex-1 text-center">{title}</div>
-      {right}
+      <div className="flex shrink-0 items-center gap-1.5">{right}</div>
     </motion.div>
   );
 }
+
+/** Unified bottom glass action bar used by the reader and the composer. */
+function IosActionBar({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.25, duration: 0.5, delay: 0.05 }}
+      className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
+      style={{ borderRadius: 9999 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Label + value row inside a grouped card (iOS inset list style). */
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-[48px] items-center gap-3 px-4">
+      <span className="w-16 shrink-0 text-[13px] font-semibold text-foreground/45">{label}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 
 export default function MailPage() {
   const navigate = useNavigate();
@@ -286,9 +318,9 @@ export default function MailPage() {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  
+  const folderLabel = FOLDERS.find((f) => f.key === folder)?.label ?? "Inbox";
 
-  /* ── Header: refresh / your address pill (tap to copy) / search ── */
+  /* ── Header: refresh / folder title / search — one unified glass pill ── */
   const Header = (
     <IosHeader
       left={
@@ -297,12 +329,33 @@ export default function MailPage() {
         </RoundBtn>
       }
       title={
+        <HeaderTitle>
+          <span className="truncate">{tx(folderLabel)}</span>
+          {unread > 0 && folder === "inbox" && (
+            <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-primary">
+              {unread}
+            </span>
+          )}
+        </HeaderTitle>
+      }
+      right={
+        <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
+          {searching ? <X className="h-[18px] w-[18px]" /> : <SearchIcon className="h-[18px] w-[18px]" />}
+        </RoundBtn>
+      }
+    />
+  );
+
+  /* ── Address chip (tap to copy) + optional search field ── */
+  const Meta = (
+    <div className="mt-2.5 space-y-2.5">
+      <div className="flex justify-center">
         <button
           type="button"
           onClick={copyAddress}
           aria-label={tx("Copy address")}
           style={{ borderRadius: 9999 }}
-          className="mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5 px-1 py-2 text-[14px] font-semibold transition-opacity active:opacity-60"
+          className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-white/40 bg-card/60 px-3 py-1.5 text-[12.5px] font-medium text-foreground/70 backdrop-blur-xl transition-opacity active:opacity-60 dark:border-white/10"
         >
           <span className="truncate" dir="ltr">
             {box?.address ?? "…"}
@@ -315,20 +368,10 @@ export default function MailPage() {
             )}
           </span>
         </button>
-      }
-      right={
-        <RoundBtn label={tx("Search email")} onClick={() => setSearching((s) => !s)}>
-          {searching ? <X className="h-[18px] w-[18px]" /> : <SearchIcon className="h-[18px] w-[18px]" />}
-        </RoundBtn>
-      }
-    />
-  );
+      </div>
 
-  /* ── Optional search field (address lives in the header pill) ── */
-  const Meta = (
-    <div className="mt-2 space-y-2.5">
       {searching && (
-        <div className="flex h-11 items-center gap-2.5 rounded-[20px] bg-card px-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+        <div className={`${glassCardCls} flex h-12 items-center gap-2.5 px-4`} style={{ borderRadius: 9999 }}>
           <SearchIcon className="h-4 w-4 shrink-0 text-foreground/35" />
           <input
             autoFocus
@@ -347,13 +390,14 @@ export default function MailPage() {
         </div>
       )}
     </div>
+
   );
 
   /* ── List: date-grouped rows on white cards ── */
   const List = (
     <div className="mt-4">
       {loading && (
-        <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+        <div className={glassCardCls}>
           {[0, 1, 2, 3, 4].map((i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-3.5">
               <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-foreground/[0.07]" />
@@ -381,7 +425,7 @@ export default function MailPage() {
         groups.map((g) => (
           <section key={g.label} className="mb-4">
             <p className="mb-1.5 px-2 text-[13px] font-semibold text-foreground/45">{tx(g.label)}</p>
-            <div className="overflow-hidden rounded-[22px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+            <div className={glassCardCls}>
               {g.rows.map((m, i) => {
                 const addr = folder === "sent" ? m.to_address : m.from_address;
                 const who = displayName(folder === "sent" ? null : m.from_name, addr);
@@ -674,60 +718,55 @@ function MessageView({
         />
       </div>
 
-      {/* Subject / To card */}
-      <div className="px-4 pt-3">
-        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
-          <div className="flex gap-2 px-4 py-3">
-            <span className="shrink-0 text-[14px] font-semibold">{tx("Subject")}:</span>
-            <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75">
-              {msg.subject || tx("(no subject)")}
-            </span>
-          </div>
-          <div className="h-px bg-foreground/[0.06]" />
-          <div className="flex items-center gap-2 px-4 py-3">
-            <span className="shrink-0 text-[14px] font-semibold">{tx("From")}:</span>
-            <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75" dir="ltr">
-              {msg.from_address}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Body card */}
+      {/* One scrollable stack: subject header card → sender row → body */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
-        <div className="rounded-[20px] bg-card p-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-foreground/35">
-            {new Date(msg.created_at).toLocaleString()}
-          </p>
-          {msg.body_html ? (
-            <HtmlBody html={msg.body_html} />
-          ) : (
-            <p className="whitespace-pre-wrap text-[15px] leading-[1.8] text-foreground/85">{msg.body_text}</p>
-          )}
-
-          {explanation && (
-            <div className="mt-5 rounded-[18px] bg-primary/[0.07] p-4">
-              <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold text-primary">
-                <span className="contents">
-                  <Sparkles className="h-3.5 w-3.5" />
-                </span>
-                {tx("Megsy's summary")}
-              </p>
-              <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
-            </div>
-          )}
+        <div className={glassCardCls}>
+          <div className="px-5 pb-4 pt-5">
+            <h2 className="text-[21px] font-semibold leading-snug tracking-tight">
+              {msg.subject || tx("(no subject)")}
+            </h2>
+          </div>
+          <div className={hairline} />
+          <div className="flex items-center gap-3 px-5 py-3.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+              {initials(who)}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[14px] font-semibold">{who}</span>
+              <span className="block truncate text-[12px] text-foreground/45" dir="ltr">
+                {msg.from_address}
+              </span>
+            </span>
+            <span className="shrink-0 text-[11.5px] tabular-nums text-foreground/40">
+              {new Date(msg.created_at).toLocaleString()}
+            </span>
+          </div>
+          <div className={hairline} />
+          <div className="px-5 py-5">
+            {msg.body_html ? (
+              <HtmlBody html={msg.body_html} />
+            ) : (
+              <p className="whitespace-pre-wrap text-[15px] leading-[1.8] text-foreground/85">{msg.body_text}</p>
+            )}
+          </div>
         </div>
+
+        {explanation && (
+          <div className={`${glassCardCls} mt-3 bg-primary/[0.06] p-5`}>
+            <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold text-primary">
+              <span className="contents">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
+              {tx("Megsy's summary")}
+            </p>
+            <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed">{explanation}</p>
+          </div>
+        )}
       </div>
 
-      {/* iOS 26 liquid-glass action bar: Reply pill + circular actions in one glass container */}
+      {/* iOS 26 liquid-glass action bar: Reply pill + circular actions */}
       <div className="px-3 pb-4 pt-1">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", bounce: 0.25, duration: 0.5, delay: 0.05 }}
-          className={`${glassBarCls} flex items-center gap-1.5 p-1.5`}
-          style={{ borderRadius: 9999 }}
-        >
+        <IosActionBar>
           <button
             type="button"
             onClick={() => onReply(msg)}
@@ -751,8 +790,9 @@ function MessageView({
           >
             <Inbox className="h-[17px] w-[17px]" />
           </RoundBtn>
-        </motion.div>
+        </IosActionBar>
       </div>
+
     </Sheet>
   );
 }
@@ -807,85 +847,77 @@ function Composer({
             </HeaderTitle>
           }
           right={
-            <RoundBtn label={tx("New message")}>
-              <SquarePen className="h-[18px] w-[18px]" />
+            <RoundBtn label={tx("Attach")}>
+              <Paperclip className="h-[18px] w-[18px]" />
             </RoundBtn>
           }
         />
       </div>
 
-      {/* Recipients card */}
-      <div className="px-4 pt-3">
-        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
-          <div className="flex items-center gap-2 px-4">
-            <span className="shrink-0 text-[14px] font-semibold">{tx("To")}:</span>
+      {/* One grouped card: From → To → Subject → body (iOS inset list) */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
+        <div className={glassCardCls}>
+          <FieldRow label={tx("From")}>
+            <span className="block truncate text-[14px] text-foreground/45" dir="ltr">
+              {from}
+            </span>
+          </FieldRow>
+          <div className={hairline} />
+          <FieldRow label={tx("To")}>
             <Input
               dir="ltr"
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder="name@example.com"
-              className="h-12 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+              className="h-11 w-full border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
             />
-          </div>
-          <div className="h-px bg-foreground/[0.06]" />
-          <div className="flex items-center gap-2 px-4">
-            <span className="shrink-0 text-[14px] font-semibold">{tx("Subject")}:</span>
+          </FieldRow>
+          <div className={hairline} />
+          <FieldRow label={tx("Subject")}>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="h-12 flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
+              className="h-11 w-full border-0 bg-transparent px-0 text-[14px] shadow-none focus-visible:ring-0"
             />
-          </div>
-        </div>
-        <p className="mt-2 px-2 text-[11.5px] text-foreground/40" dir="ltr">
-          {from}
-        </p>
-      </div>
-
-      {/* Body card with iOS toolbar */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-3">
-        <div className="flex min-h-[320px] flex-col rounded-[22px] bg-card p-4 shadow-[0_1px_3px_hsl(var(--foreground)/0.07)]">
+          </FieldRow>
+          <div className={hairline} />
           <Textarea
-            rows={10}
+            rows={12}
             placeholder={tx("Write your message…")}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="min-h-[200px] flex-1 resize-none border-0 bg-transparent px-0 text-[15px] leading-relaxed shadow-none focus-visible:ring-0"
+            className="min-h-[260px] w-full resize-none border-0 bg-transparent px-5 py-4 text-[15px] leading-[1.75] shadow-none focus-visible:ring-0"
           />
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-0 rounded-full bg-foreground/[0.04] px-1 py-1 text-foreground/65">
-              <span className="grid h-9 w-9 place-items-center rounded-full">
-                <span className="contents">
-                  <Paperclip className="h-[17px] w-[17px]" />
-                </span>
-              </span>
-              <span className="h-5 w-px bg-foreground/10" />
-              <span className="grid h-9 w-9 place-items-center rounded-full">
-                <span className="contents">
-                  <TypeIcon className="h-[17px] w-[17px]" />
-                </span>
-              </span>
-              <span className="h-5 w-px bg-foreground/10" />
-              <span className="grid h-9 w-9 place-items-center rounded-full">
-                <span className="contents">
-                  <PenLine className="h-[17px] w-[17px]" />
-                </span>
-              </span>
-            </div>
-            <button
-              type="button"
-              disabled={busy || !to.trim()}
-              onClick={() => void submit()}
-              aria-label={tx("Send")}
-              className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 disabled:opacity-40"
-            >
-              <span className="contents">
-                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 rtl:rotate-180" />}
-              </span>
-            </button>
-          </div>
         </div>
       </div>
+
+      {/* Unified glass action bar: format tools + send */}
+      <div className="px-3 pb-4 pt-1">
+        <IosActionBar>
+          <RoundBtn label={tx("Attach")}>
+            <Paperclip className="h-[17px] w-[17px]" />
+          </RoundBtn>
+          <RoundBtn label={tx("Format")}>
+            <TypeIcon className="h-[17px] w-[17px]" />
+          </RoundBtn>
+          <RoundBtn label={tx("Signature")}>
+            <PenLine className="h-[17px] w-[17px]" />
+          </RoundBtn>
+          <button
+            type="button"
+            disabled={busy || !to.trim()}
+            onClick={() => void submit()}
+            style={{ borderRadius: 9999 }}
+            className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary text-[15px] font-semibold text-primary-foreground shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.6),inset_0_1px_0_hsl(0_0%_100%/0.35)] transition-transform active:scale-[0.97] disabled:opacity-40"
+          >
+            <span className="contents">
+              {busy ? <Loader2 className="h-[17px] w-[17px] animate-spin" /> : <Send className="h-[17px] w-[17px] rtl:rotate-180" />}
+            </span>
+            {tx("Send")}
+          </button>
+        </IosActionBar>
+      </div>
+
     </Sheet>
   );
 }
