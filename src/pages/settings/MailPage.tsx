@@ -428,37 +428,52 @@ export default function MailPage() {
       {Meta}
       {List}
 
-      {/* iOS floating tab dock + compose FAB */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 flex justify-center px-4 md:bottom-8">
-        <div className="pointer-events-auto flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-full bg-card/95 p-1.5 shadow-[0_8px_28px_hsl(var(--foreground)/0.14)] backdrop-blur">
-            {FOLDERS.map((f) => {
-              const active = folder === f.key;
-              return (
-                <button
-                  key={f.key}
-                  onClick={() => setFolder(f.key)}
-                  className={`rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                    active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
-                  }`}
-                >
-                  {tx(f.label)}
-                </button>
-              );
-            })}
+      {/* iOS floating tab dock + compose FAB — portalled so page transforms
+          in the settings shell can't break `position: fixed`. */}
+      {createPortal(
+        <div
+          className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4"
+          style={{ bottom: "calc(20px + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="pointer-events-auto flex items-center gap-2">
+            <div
+              className="flex items-center gap-1 bg-card/95 p-1.5 shadow-[0_10px_34px_hsl(var(--foreground)/0.16)] backdrop-blur"
+              style={{ borderRadius: 9999 }}
+            >
+              {FOLDERS.map((f) => {
+                const active = folder === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setFolder(f.key)}
+                    style={{ borderRadius: 9999 }}
+                    className={`px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+                      active ? "bg-primary/10 text-primary" : "text-foreground/50 hover:text-foreground/80"
+                    }`}
+                  >
+                    {tx(f.label)}
+                    {f.key === "inbox" && unread > 0 && (
+                      <span className="ms-1.5 tabular-nums opacity-70">{unread}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              aria-label={tx("Compose")}
+              onClick={() => setDraft({ to: "", subject: "", text: "" })}
+              style={{ borderRadius: 9999 }}
+              className="grid h-12 w-12 place-items-center bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+            >
+              <span className="contents">
+                <Plus className="h-5 w-5" />
+              </span>
+            </button>
           </div>
-          <button
-            type="button"
-            aria-label={tx("Compose")}
-            onClick={() => setDraft({ to: "", subject: "", text: "" })}
-            className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
-          >
-            <span className="contents">
-              <Plus className="h-5 w-5" />
-            </span>
-          </button>
-        </div>
-      </div>
+        </div>,
+        document.body,
+      )}
 
       {open && (
         <MessageView
